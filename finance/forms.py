@@ -10,7 +10,7 @@ class TransactionAdminForm(forms.ModelForm):
             'user', 'kind', 'amount', 'exchange_rate',
             'source_wallet', 'destination_wallet',
             'source_account', 'destination_account',
-            'destination_deposit'
+            'destination_deposit', 'state'
         )
 
     def __init__(self, *args, **kwargs):
@@ -19,6 +19,8 @@ class TransactionAdminForm(forms.ModelForm):
         for name in ['source_wallet', 'destination_wallet', 'source_account', 'destination_account', 'destination_deposit', 'exchange_rate']:
             if name in self.fields:
                 self.fields[name].required = False
+        if 'state' in self.fields:
+            self.fields['state'].required = True
 
     def clean(self):
         cleaned = super().clean()

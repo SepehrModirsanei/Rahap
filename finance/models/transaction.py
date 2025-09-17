@@ -220,3 +220,20 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"Txn({self.kind}) {self.amount} by {self.user.username}"
+
+    def get_next_state(self) -> str | None:
+        if self.state == self.STATE_WAITING_TREASURY:
+            return self.STATE_WAITING_SANDOGH
+        if self.state == self.STATE_WAITING_SANDOGH:
+            return self.STATE_VERIFIED_KHAZANEDAR
+        if self.state == self.STATE_VERIFIED_KHAZANEDAR:
+            return self.STATE_DONE
+        return None
+
+    def advance_state(self) -> bool:
+        next_state = self.get_next_state()
+        if not next_state:
+            return False
+        self.state = next_state
+        self.save(update_fields=['state'])
+        return True

@@ -7,3 +7,4 @@ class FinanceConfig(AppConfig):
 
     def ready(self):
         from . import signals  # noqa
+        from .signals import transaction_signals  # noqa

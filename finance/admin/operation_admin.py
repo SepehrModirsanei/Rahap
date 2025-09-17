@@ -3,6 +3,7 @@ from django.utils import timezone
 from decimal import Decimal
 from ..models import User, Wallet, Account, Deposit, Transaction, AccountDailyBalance
 from ..forms import TransactionAdminForm
+from .transaction_state_log_admin import TransactionStateLogInline
 
 
 class ReadOnlyTransactionInline(admin.TabularInline):
@@ -123,8 +124,9 @@ class OperationTransactionAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'kind', 'amount', 'state', 'applied', 'scheduled_for', 'created_at')
     list_filter = ('kind', 'state', 'applied', 'created_at')
     search_fields = ('user__username',)
-    actions = ['submit_to_treasury', 'apply_transactions', 'view_transaction_summary']
+    actions = ['submit_to_treasury', 'advance_state', 'apply_transactions', 'view_transaction_summary']
     form = TransactionAdminForm
+    inlines = [TransactionStateLogInline]
     date_hierarchy = 'created_at'
     readonly_fields = ('created_at', 'issued_at')
 
@@ -137,6 +139,8 @@ class OperationTransactionAdmin(admin.ModelAdmin):
             old_obj = Transaction.objects.get(pk=obj.pk)
             if old_obj.applied:
                 old_obj.revert()
+        # Track who made the change
+        obj._changed_by = request.user
         super().save_model(request, obj, form, change)
         if not obj.scheduled_for or obj.scheduled_for <= timezone.now():
             obj.apply()
@@ -155,6 +159,14 @@ class OperationTransactionAdmin(admin.ModelAdmin):
         updated = queryset.update(state='waiting_treasury')
         self.message_user(request, f"Submitted {updated} to Treasury")
     submit_to_treasury.short_description = 'Set state: Waiting for Treasury'
+
+    def advance_state(self, request, queryset):
+        moved = 0
+        for txn in queryset:
+            if txn.advance_state():
+                moved += 1
+        self.message_user(request, f"Advanced {moved} transaction(s) to next state")
+    advance_state.short_description = 'Advance to next state'
 
     def view_transaction_summary(self, request, queryset):
         total_amount = sum(float(t.amount) for t in queryset)

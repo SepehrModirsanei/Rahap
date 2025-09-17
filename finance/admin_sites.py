@@ -4,6 +4,8 @@ from .admin.treasury_admin import *
 from .admin.operation_admin import *
 from .admin.readonly_admin_1 import *
 from .admin.readonly_admin_2 import *
+from .admin.transaction_state_log_admin import TransactionStateLogAdmin
+from .models import TransactionStateLog
 
 
 # Treasury Admin Site - Full Financial Control
@@ -21,6 +23,7 @@ treasury_admin_site.register(Wallet, TreasuryWalletAdmin)
 treasury_admin_site.register(Account, TreasuryAccountAdmin)
 treasury_admin_site.register(Deposit, TreasuryDepositAdmin)
 treasury_admin_site.register(Transaction, TreasuryTransactionAdmin)
+treasury_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
 
 
 # Operation Admin Site - Daily Operations
@@ -38,6 +41,7 @@ operation_admin_site.register(Wallet, OperationWalletAdmin)
 operation_admin_site.register(Account, OperationAccountAdmin)
 operation_admin_site.register(Deposit, OperationDepositAdmin)
 operation_admin_site.register(Transaction, OperationTransactionAdmin)
+operation_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
 
 
 # Read-Only Admin Site 1 - Financial Overview

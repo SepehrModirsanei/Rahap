@@ -3,6 +3,7 @@ from django.utils import timezone
 from decimal import Decimal
 from ..models import User, Wallet, Account, Deposit, Transaction, AccountDailyBalance
 from ..forms import TransactionAdminForm
+from .transaction_state_log_admin import TransactionStateLogInline
 
 
 class ReadOnlyTransactionInline(admin.TabularInline):
@@ -132,8 +133,9 @@ class TreasuryTransactionAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'scheduled_for', 'created_at')
     list_filter = ('kind', 'state', 'applied', 'scheduled_for', 'created_at')
     search_fields = ('user__username',)
-    actions = ['mark_waiting_sandogh', 'mark_verified_khazanedar', 'mark_done', 'apply_transactions', 'revert_transactions', 'bulk_schedule']
+    actions = ['advance_state', 'mark_waiting_sandogh', 'mark_verified_khazanedar', 'mark_done', 'apply_transactions', 'revert_transactions', 'bulk_schedule']
     form = TransactionAdminForm
+    inlines = [TransactionStateLogInline]
     date_hierarchy = 'created_at'
 
     class Media:
@@ -145,6 +147,8 @@ class TreasuryTransactionAdmin(admin.ModelAdmin):
             old_obj = Transaction.objects.get(pk=obj.pk)
             if old_obj.applied:
                 old_obj.revert()
+        # Track who made the change
+        obj._changed_by = request.user
         super().save_model(request, obj, form, change)
         if not obj.scheduled_for or obj.scheduled_for <= timezone.now():
             obj.apply()
@@ -173,6 +177,14 @@ class TreasuryTransactionAdmin(admin.ModelAdmin):
         updated = queryset.update(state='done')
         self.message_user(request, f"Moved {updated} to Done")
     mark_done.short_description = 'Set state: Done'
+
+    def advance_state(self, request, queryset):
+        moved = 0
+        for txn in queryset:
+            if txn.advance_state():
+                moved += 1
+        self.message_user(request, f"Advanced {moved} transaction(s) to next state")
+    advance_state.short_description = 'Advance to next state'
 
     def revert_transactions(self, request, queryset):
         reverted = 0

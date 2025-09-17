@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from ..models import Transaction
 from ..forms import TransactionAdminForm
+from .transaction_state_log_admin import TransactionStateLogInline
 
 
 @admin.register(Transaction)
@@ -11,6 +12,7 @@ class TransactionAdmin(admin.ModelAdmin):
     search_fields = ('user__username',)
     actions = ['apply_transactions']
     form = TransactionAdminForm
+    inlines = [TransactionStateLogInline]
 
     class Media:
         js = ('finance/transaction_admin.js',)
@@ -23,6 +25,8 @@ class TransactionAdmin(admin.ModelAdmin):
             old_obj = Transaction.objects.get(pk=obj.pk)
             if old_obj.applied:
                 old_obj.revert()
+        # Track who made the change
+        obj._changed_by = request.user
         super().save_model(request, obj, form, change)
         # Apply effects after saving
         # Only auto-apply if not scheduled in the future
