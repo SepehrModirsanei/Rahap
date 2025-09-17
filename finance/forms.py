@@ -10,7 +10,7 @@ class TransactionAdminForm(forms.ModelForm):
             'user', 'kind', 'amount', 'exchange_rate',
             'source_wallet', 'destination_wallet',
             'source_account', 'destination_account',
-            'destination_deposit', 'applied'
+            'destination_deposit'
         )
 
     def __init__(self, *args, **kwargs):
