@@ -1,0 +1,84 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+{% if include_persian_datepicker %}
+<!-- Persian Date Picker CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<!-- jQuery (required for Persian Date Picker) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Persian Date Picker JS -->
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+
+<style>
+.persian-datepicker {
+    direction: rtl;
+    text-align: right;
+}
+
+.persian-datetimepicker {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Custom styling for Persian date picker */
+.persian-datepicker-input {
+    background: white;
+    border: 1px solid #ccc;
+    padding: 8px;
+    border-radius: 4px;
+    width: 200px;
+}
+
+.persian-datepicker-input:focus {
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px #007cba;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // Initialize Persian date picker for all date inputs
+    $('.persian-datepicker').persianDatepicker({
+        format: 'YYYY/MM/DD',
+        viewMode: 'day',
+        minViewMode: 'day',
+        autoClose: true,
+        position: 'bottom',
+        language: 'fa',
+        calendar: {
+            persian: {
+                locale: 'fa',
+                showHint: true,
+                leapYearMode: 'algorithmic'
+            }
+        }
+    });
+    
+    // Initialize Persian date and time picker for datetime inputs
+    $('.persian-datetimepicker').persianDatepicker({
+        format: 'YYYY/MM/DD HH:mm',
+        viewMode: 'day',
+        minViewMode: 'day',
+        autoClose: true,
+        position: 'bottom',
+        language: 'fa',
+        timePicker: {
+            enabled: true,
+            meridiem: {
+                enabled: true
+            }
+        },
+        calendar: {
+            persian: {
+                locale: 'fa',
+                showHint: true,
+                leapYearMode: 'algorithmic'
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,6 +1,6 @@
 from django import forms
 from ..models import Transaction, Account, Deposit
-from ..widgets import PersianDateTimeWidget
+from ..widgets.persian_date_picker import PersianDatePickerWidget, PersianDateTimePickerWidget
 
 
 class WithdrawalRequestForm(forms.ModelForm):
@@ -9,7 +9,7 @@ class WithdrawalRequestForm(forms.ModelForm):
         model = Transaction
         fields = ('user', 'source_account', 'amount', 'state', 'scheduled_for')
         widgets = {
-            'scheduled_for': PersianDateTimeWidget(),
+            'scheduled_for': PersianDateTimePickerWidget(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -52,7 +52,7 @@ class CreditIncreaseForm(forms.ModelForm):
         model = Transaction
         fields = ('user', 'destination_account', 'amount', 'state', 'scheduled_for')
         widgets = {
-            'scheduled_for': PersianDateTimeWidget(),
+            'scheduled_for': PersianDateTimePickerWidget(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -96,7 +96,7 @@ class AccountTransferForm(forms.ModelForm):
         model = Transaction
         fields = ('user', 'source_account', 'destination_account', 'amount', 'exchange_rate', 'state', 'scheduled_for')
         widgets = {
-            'scheduled_for': PersianDateTimeWidget(),
+            'scheduled_for': PersianDateTimePickerWidget(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -150,7 +150,7 @@ class ProfitTransactionForm(forms.ModelForm):
         model = Transaction
         fields = ('user', 'destination_account', 'amount', 'state', 'scheduled_for')
         widgets = {
-            'scheduled_for': PersianDateTimeWidget(),
+            'scheduled_for': PersianDateTimePickerWidget(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -190,7 +190,7 @@ class DepositTransactionForm(forms.ModelForm):
         model = Transaction
         fields = ('user', 'source_account', 'destination_deposit', 'amount', 'state', 'scheduled_for')
         widgets = {
-            'scheduled_for': PersianDateTimeWidget(),
+            'scheduled_for': PersianDateTimePickerWidget(),
         }
 
     def __init__(self, *args, **kwargs):

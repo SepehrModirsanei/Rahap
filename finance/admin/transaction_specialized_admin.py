@@ -18,6 +18,18 @@ from .transaction_state_log_admin import TransactionStateLogInline
 class BaseTransactionAdmin(admin.ModelAdmin):
     """Base admin class for all transaction types"""
     form = TransactionAdminForm
+    
+    def add_view(self, request, form_url='', extra_context=None):
+        """Override add_view to include Persian date picker template"""
+        extra_context = extra_context or {}
+        extra_context['include_persian_datepicker'] = True
+        return super().add_view(request, form_url, extra_context)
+    
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """Override change_view to include Persian date picker template"""
+        extra_context = extra_context or {}
+        extra_context['include_persian_datepicker'] = True
+        return super().change_view(request, object_id, form_url, extra_context)
     inlines = [TransactionStateLogInline]
     readonly_fields = ('created_at',)
     

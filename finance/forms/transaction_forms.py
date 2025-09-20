@@ -1,6 +1,7 @@
 from django import forms
 
 from ..models import Transaction, Account
+from ..widgets.persian_date_picker import PersianDateTimePickerWidget
 
 
 class TransactionAdminForm(forms.ModelForm):
@@ -9,8 +10,11 @@ class TransactionAdminForm(forms.ModelForm):
         fields = (
             'user', 'kind', 'amount', 'exchange_rate',
             'source_account', 'destination_account',
-            'destination_deposit', 'state'
+            'destination_deposit', 'state', 'scheduled_for'
         )
+        widgets = {
+            'scheduled_for': PersianDateTimePickerWidget(),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

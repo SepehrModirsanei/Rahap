@@ -1,0 +1,86 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/persian-datepicker.min.css' %}">
+<script src="{% static 'admin/js/jquery-3.6.0.min.js' %}"></script>
+<script src="{% static 'admin/js/persian-date.min.js' %}"></script>
+<script src="{% static 'admin/js/persian-datepicker.min.js' %}"></script>
+
+<style>
+.persian-datepicker {
+    direction: rtl;
+    text-align: right;
+}
+
+.persian-datetimepicker {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Custom styling for Persian date picker */
+.persian-datepicker-input {
+    background: white;
+    border: 1px solid #ccc;
+    padding: 8px;
+    border-radius: 4px;
+    width: 200px;
+}
+
+.persian-datepicker-input:focus {
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px #007cba;
+}
+</style>
+
+<script>
+(function($) {
+    $(document).ready(function() {
+        // Initialize Persian date picker for all date inputs
+        $('.vDateField').each(function() {
+            $(this).persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false,
+                persianDigit: true,
+                altField: $(this),
+                altFormat: 'YYYY-MM-DD',
+                calendar: {
+                    persian: {
+                        locale: 'fa'
+                    }
+                },
+                onSelect: function(unix) {
+                    var date = new persianDate(unix);
+                    $(this.altField).val(date.format('YYYY-MM-DD'));
+                }
+            });
+        });
+
+        // Initialize Persian date and time picker for datetime inputs
+        $('.vDateTimeInput').each(function() {
+            $(this).persianDatepicker({
+                format: 'YYYY/MM/DD HH:mm:ss',
+                autoClose: true,
+                initialValue: false,
+                persianDigit: true,
+                altField: $(this),
+                altFormat: 'YYYY-MM-DD HH:mm:ss',
+                calendar: {
+                    persian: {
+                        locale: 'fa'
+                    }
+                },
+                timePicker: {
+                    enabled: true,
+                    meridian: {
+                        enabled: false
+                    }
+                },
+                onSelect: function(unix) {
+                    var date = new persianDate(unix);
+                    $(this.altField).val(date.format('YYYY-MM-DD HH:mm:ss'));
+                }
+            });
+        });
+    });
+})(django.jQuery);
+</script>
+{% endblock %}
