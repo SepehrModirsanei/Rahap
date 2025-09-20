@@ -7,7 +7,7 @@ from .admin_sites import (
     readonly_admin_site_2
 )
 
-from .views import UserViewSet, AccountViewSet, DepositViewSet, TransactionViewSet
+from .views import UserViewSet, AccountViewSet, DepositViewSet, TransactionViewSet, get_user_accounts_for_admin
 
 
 router = DefaultRouter()
@@ -24,6 +24,8 @@ urlpatterns = [
     path('admin/operations/', operation_admin_site.urls),
     path('admin/financial-overview/', readonly_admin_site_1.urls),
     path('admin/analytics/', readonly_admin_site_2.urls),
+    # Admin helper endpoints
+    path('admin/get-user-accounts/', get_user_accounts_for_admin, name='get_user_accounts_for_admin'),
 ]
 
 

@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Transaction
+from .models import Transaction, Account
 
 
 class TransactionAdminForm(forms.ModelForm):
@@ -21,8 +21,55 @@ class TransactionAdminForm(forms.ModelForm):
         if 'state' in self.fields:
             self.fields['state'].required = True
 
+        # Filter accounts based on transaction type and user
+        self._filter_account_choices()
+
+    def _filter_account_choices(self):
+        """Filter account choices based on transaction type and user"""
+        # Get the current transaction kind and user
+        kind = self.data.get('kind') if self.data else (self.instance.kind if self.instance.pk else None)
+        user_id = self.data.get('user') if self.data else (self.instance.user_id if self.instance.pk else None)
+        
+        # If we have a user, filter accounts to that user
+        if user_id:
+            user_accounts = Account.objects.filter(user_id=user_id)
+            
+            # For credit increase and withdrawal request, only show rial accounts
+            if kind in [Transaction.KIND_CREDIT_INCREASE, Transaction.KIND_WITHDRAWAL_REQUEST]:
+                rial_accounts = user_accounts.filter(account_type=Account.ACCOUNT_TYPE_RIAL)
+                
+                if kind == Transaction.KIND_CREDIT_INCREASE:
+                    # Credit increase uses destination_account
+                    self.fields['destination_account'].queryset = rial_accounts
+                    self.fields['source_account'].queryset = Account.objects.none()
+                elif kind == Transaction.KIND_WITHDRAWAL_REQUEST:
+                    # Withdrawal request uses source_account
+                    self.fields['source_account'].queryset = rial_accounts
+                    self.fields['destination_account'].queryset = Account.objects.none()
+            else:
+                # For other transaction types, show all user accounts
+                self.fields['source_account'].queryset = user_accounts
+                self.fields['destination_account'].queryset = user_accounts
+        else:
+            # No user selected, show all accounts (will be filtered by validation)
+            self.fields['source_account'].queryset = Account.objects.all()
+            self.fields['destination_account'].queryset = Account.objects.all()
+
     def clean(self):
         cleaned = super().clean()
+        
+        # Check if exchange rate is required for account-to-account transactions
+        kind = cleaned.get('kind')
+        source_account = cleaned.get('source_account')
+        destination_account = cleaned.get('destination_account')
+        exchange_rate = cleaned.get('exchange_rate')
+        
+        if (kind == Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT and 
+            source_account and destination_account and 
+            source_account.account_type != destination_account.account_type):
+            if not exchange_rate:
+                self.add_error('exchange_rate', 'Exchange rate is required for cross-currency account transfers.')
+        
         # Delegate validation to model.clean for consistency
         # Bind cleaned data to instance before calling clean()
         for field, value in cleaned.items():

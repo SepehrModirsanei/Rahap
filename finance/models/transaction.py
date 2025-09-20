@@ -53,15 +53,34 @@ class Transaction(models.Model):
         if self.kind == self.KIND_CREDIT_INCREASE:
             if not self.destination_account:
                 raise ValidationError('Credit increase requires destination_account.')
+            # Credit increase must work with rial accounts only
+            if self.destination_account.account_type != 'rial':
+                raise ValidationError('Credit increase can only be applied to rial accounts.')
             return
         if self.kind == self.KIND_WITHDRAWAL_REQUEST:
             if not self.source_account:
                 raise ValidationError('Withdrawal request requires source_account.')
+            # Withdrawal request must work with rial accounts only
+            if self.source_account.account_type != 'rial':
+                raise ValidationError('Withdrawal request can only be applied to rial accounts.')
             return
         if self.kind == self.KIND_ACCOUNT_TO_DEPOSIT_INITIAL:
             if not (self.source_account and self.destination_deposit):
                 raise ValidationError('Account to Deposit requires source_account and destination_deposit')
             return
+        
+        # Validate account-to-account transactions
+        if self.kind == self.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
+            if not (self.source_account and self.destination_account):
+                raise ValidationError('Account to Account transfer requires both source_account and destination_account')
+            
+            # Check if exchange rate is required for cross-currency transfers
+            if (self.source_account.account_type != self.destination_account.account_type):
+                if not self.exchange_rate:
+                    raise ValidationError('Exchange rate is required for cross-currency account transfers.')
+                if self.exchange_rate <= 0:
+                    raise ValidationError('Exchange rate must be positive for cross-currency transfers.')
+        
         if not any([self.source_account]) or not any([self.destination_account, self.destination_deposit]):
             raise ValidationError('Transaction must have a source and a destination.')
         

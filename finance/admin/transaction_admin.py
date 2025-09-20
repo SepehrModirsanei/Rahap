@@ -15,7 +15,7 @@ class TransactionAdmin(admin.ModelAdmin):
     inlines = [TransactionStateLogInline]
 
     class Media:
-        js = ('finance/transaction_admin.js',)
+        js = ('finance/transaction_admin.js?v=2',)
 
     def save_model(self, request, obj, form, change):
         # Validate like serializer does
