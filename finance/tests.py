@@ -19,7 +19,13 @@ class AdminCRUDTests(TestCase):
         cls.user2 = User.objects.create_user(
             username='user2', email='user2@example.com', password='userpass2'
         )
-        # Wallets are auto-created via signal
+        # Ensure wallets are created
+        if not hasattr(cls.admin, 'wallet'):
+            Wallet.objects.create(user=cls.admin)
+        if not hasattr(cls.user1, 'wallet'):
+            Wallet.objects.create(user=cls.user1)
+        if not hasattr(cls.user2, 'wallet'):
+            Wallet.objects.create(user=cls.user2)
 
     def setUp(self):
         self.client.force_login(self.admin)
@@ -84,7 +90,10 @@ class AdminCRUDTests(TestCase):
         # add: create third user to assign wallet manually
         User = get_user_model()
         user3 = User.objects.create_user('user3', password='xpass')
-        # signal auto-creates wallet; delete to test manual add
+        # Ensure wallet exists first
+        if not hasattr(user3, 'wallet'):
+            Wallet.objects.create(user=user3)
+        # Delete to test manual add
         user3.wallet.delete()
         url_add = reverse('admin:finance_wallet_add')
         resp = self.client.post(
@@ -219,25 +228,25 @@ class AdminCRUDTests(TestCase):
         u = self.user1
         w = u.wallet
         # Add to wallet
-        txn = Transaction.objects.create(user=u, destination_wallet=w, amount=100, kind=Transaction.KIND_ADD_TO_WALLET)
+        txn = Transaction.objects.create(user=u, destination_wallet=w, amount=100, kind=Transaction.KIND_ADD_TO_WALLET, state=Transaction.STATE_DONE)
         txn.apply()
         w.refresh_from_db()
         self.assertEqual(str(Decimal(w.balance).quantize(Decimal('0.01'))), '100.00')
         # Remove from wallet
-        txn = Transaction.objects.create(user=u, source_wallet=w, amount=20, kind=Transaction.KIND_REMOVE_FROM_WALLET)
+        txn = Transaction.objects.create(user=u, source_wallet=w, amount=20, kind=Transaction.KIND_REMOVE_FROM_WALLET, state=Transaction.STATE_DONE)
         txn.apply()
         w.refresh_from_db()
         self.assertEqual(str(Decimal(w.balance).quantize(Decimal('0.01'))), '80.00')
         # Create non-rial account
         acc_fx = Account.objects.create(user=u, wallet=w, name='USD', account_type='foreign', balance=0, monthly_profit_rate=0)
         # Wallet(IRR) -> non-rial account with exchange (rate=IRR per unit FX)
-        txn = Transaction.objects.create(user=u, source_wallet=w, destination_account=acc_fx, amount=50, kind=Transaction.KIND_TRANSFER_WALLET_TO_ACCOUNT, exchange_rate=500000)
+        txn = Transaction.objects.create(user=u, source_wallet=w, destination_account=acc_fx, amount=50, kind=Transaction.KIND_TRANSFER_WALLET_TO_ACCOUNT, exchange_rate=500000, state=Transaction.STATE_DONE)
         txn.apply()
         w.refresh_from_db(); acc_fx.refresh_from_db()
         # 50 IRR to account at rate 500k IRR per USD => 50/500000 = 0.0001
         self.assertEqual(str(acc_fx.balance), '0.000100')
         # Account(FX) -> Wallet(IRR) with exchange
-        txn = Transaction.objects.create(user=u, source_account=acc_fx, destination_wallet=w, amount=Decimal('0.0001'), kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_WALLET, exchange_rate=500000)
+        txn = Transaction.objects.create(user=u, source_account=acc_fx, destination_wallet=w, amount=Decimal('0.0001'), kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_WALLET, exchange_rate=500000, state=Transaction.STATE_DONE)
         txn.apply()
         w.refresh_from_db(); acc_fx.refresh_from_db()
         # Wallet credited by amount * rate = 0.0001 * 500000 = 50
