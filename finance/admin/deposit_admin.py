@@ -1,5 +1,7 @@
 from django.contrib import admin
 from ..models import Deposit, Transaction
+from ..forms import DepositAdminForm
+from .filters import ProfitCalculationFilter
 
 
 class ReadOnlyTransactionInline(admin.TabularInline):
@@ -19,8 +21,9 @@ class DepositTxnInInline(ReadOnlyTransactionInline):
 
 @admin.register(Deposit)
 class DepositAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'funding_source')
-    list_filter = ('funding_source',)
+    form = DepositAdminForm
+    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'funding_source', 'funding_account', 'get_persian_created_at', 'get_profit_calculation_info')
+    list_filter = ('funding_source', ProfitCalculationFilter)
     search_fields = ('user__username',)
     actions = ['accrue_profit_now']
     inlines = [DepositTxnInInline]
@@ -29,8 +32,8 @@ class DepositAdmin(admin.ModelAdmin):
             'fields': ('user', 'initial_balance', 'monthly_profit_rate')
         }),
         ('Funding', {
-            'fields': ('funding_source',),
-            'description': 'Choose how to fund this deposit initially'
+            'fields': ('funding_source', 'funding_account'),
+            'description': 'Choose how to fund this deposit initially. If "Fund from Transaction" is selected, choose a rial account to fund from.'
         }),
     )
 

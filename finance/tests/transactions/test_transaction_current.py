@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
-from .models import Account, Deposit, Transaction
+from finance.models import Account, Deposit, Transaction
 
 
 class TransactionCurrentTests(TestCase):

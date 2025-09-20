@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from decimal import Decimal
 from ..models import Account, Transaction, AccountDailyBalance
+from .filters import ProfitCalculationFilter
 
 
 class ReadOnlyTransactionInline(admin.TabularInline):
@@ -25,8 +26,8 @@ class AccountTxnInInline(ReadOnlyTransactionInline):
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'name', 'account_type', 'initial_balance', 'monthly_profit_rate', 'funding_source', 'initial_funding_amount')
-    list_filter = ('account_type', 'funding_source')
+    list_display = ('id', 'user', 'name', 'account_type', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'funding_source', 'initial_funding_amount', 'get_persian_created_at', 'get_profit_calculation_info')
+    list_filter = ('account_type', 'funding_source', ProfitCalculationFilter)
     search_fields = ('user__username', 'name')
     actions = ['accrue_profit_now', 'snapshot_today']
     inlines = [AccountTxnOutInline, AccountTxnInInline]
@@ -53,6 +54,12 @@ class AccountAdmin(admin.ModelAdmin):
                 count += 1
         self.message_user(request, f"Accrued account profit for {count} item(s)")
     accrue_profit_now.short_description = 'Accrue profit now for selected accounts'
+
+    def balance_display(self, obj):
+        """Display the current balance of the account"""
+        return f"${obj.balance:,.2f}"
+    balance_display.short_description = 'Current Balance'
+    balance_display.admin_order_field = 'balance'
 
     def snapshot_today(self, request, queryset):
         today = timezone.now().date()

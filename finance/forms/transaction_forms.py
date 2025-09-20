@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Transaction, Account
+from ..models import Transaction, Account
 
 
 class TransactionAdminForm(forms.ModelForm):

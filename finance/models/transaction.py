@@ -2,7 +2,9 @@ from django.db import models, transaction
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
+from ..utils import get_persian_date_display
 
 
 class Transaction(models.Model):
@@ -14,39 +16,43 @@ class Transaction(models.Model):
     KIND_PROFIT_DEPOSIT_TO_ACCOUNT = 'profit_deposit_account'
 
     KIND_CHOICES = [
-        (KIND_CREDIT_INCREASE, 'Credit Increase'),
-        (KIND_WITHDRAWAL_REQUEST, 'Withdrawal Request'),
-        (KIND_TRANSFER_ACCOUNT_TO_ACCOUNT, 'Account to Account'),
-        (KIND_ACCOUNT_TO_DEPOSIT_INITIAL, 'Account to Deposit (Initial)'),
-        (KIND_PROFIT_ACCOUNT, 'Account Profit Accrual'),
-        (KIND_PROFIT_DEPOSIT_TO_ACCOUNT, 'Deposit Profit to Account'),
+        (KIND_CREDIT_INCREASE, _('Credit increase')),
+        (KIND_WITHDRAWAL_REQUEST, _('Withdrawal request')),
+        (KIND_TRANSFER_ACCOUNT_TO_ACCOUNT, _('Account to account transfer')),
+        (KIND_ACCOUNT_TO_DEPOSIT_INITIAL, _('Account to deposit initial')),
+        (KIND_PROFIT_ACCOUNT, _('Profit to account')),
+        (KIND_PROFIT_DEPOSIT_TO_ACCOUNT, _('Profit deposit to account')),
     ]
 
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='transactions')
-    source_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='outgoing_account_transactions')
-    destination_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_account_transactions')
-    destination_deposit = models.ForeignKey('Deposit', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_deposit_transactions')
-    amount = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)])
-    kind = models.CharField(max_length=40, choices=KIND_CHOICES)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='transactions', verbose_name=_('User'))
+    source_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='outgoing_account_transactions', verbose_name=_('Source account'))
+    destination_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_account_transactions', verbose_name=_('Destination account'))
+    destination_deposit = models.ForeignKey('Deposit', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_deposit_transactions', verbose_name=_('Destination deposit'))
+    amount = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('Amount'))
+    kind = models.CharField(max_length=40, choices=KIND_CHOICES, verbose_name=_('Kind'))
     # Exchange rate to convert between different currency accounts
     # For cross-currency transfers: destination_amount = source_amount * exchange_rate
-    exchange_rate = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    applied = models.BooleanField(default=False)
-    issued_at = models.DateTimeField(default=timezone.now)
-    scheduled_for = models.DateTimeField(null=True, blank=True)
+    exchange_rate = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('Exchange rate'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created at'))
+    applied = models.BooleanField(default=False, verbose_name=_('Applied'))
+    issued_at = models.DateTimeField(default=timezone.now, verbose_name=_('Issued at'))
+    scheduled_for = models.DateTimeField(null=True, blank=True, verbose_name=_('Scheduled for'))
     # Workflow state
     STATE_WAITING_TREASURY = 'waiting_treasury'
     STATE_WAITING_SANDOGH = 'waiting_sandogh'
     STATE_VERIFIED_KHAZANEDAR = 'verified_khazanedar'
     STATE_DONE = 'done'
     STATE_CHOICES = [
-        (STATE_WAITING_TREASURY, 'Waiting for Treasury'),
-        (STATE_WAITING_SANDOGH, 'Waiting for Sandogh'),
-        (STATE_VERIFIED_KHAZANEDAR, 'Verified by Khazane dar'),
-        (STATE_DONE, 'Done'),
+        (STATE_WAITING_TREASURY, _('Waiting treasury')),
+        (STATE_WAITING_SANDOGH, _('Waiting sandogh')),
+        (STATE_VERIFIED_KHAZANEDAR, _('Verified khazanedar')),
+        (STATE_DONE, _('Done')),
     ]
-    state = models.CharField(max_length=40, choices=STATE_CHOICES, default=STATE_WAITING_TREASURY)
+    state = models.CharField(max_length=40, choices=STATE_CHOICES, default=STATE_WAITING_TREASURY, verbose_name=_('State'))
+    
+    class Meta:
+        verbose_name = _('Transaction')
+        verbose_name_plural = _('Transactions')
 
     def clean(self):
         # Basic validation that at least one source and one destination is set appropriately
@@ -81,8 +87,14 @@ class Transaction(models.Model):
                 if self.exchange_rate <= 0:
                     raise ValidationError('Exchange rate must be positive for cross-currency transfers.')
         
-        if not any([self.source_account]) or not any([self.destination_account, self.destination_deposit]):
-            raise ValidationError('Transaction must have a source and a destination.')
+        # Profit transactions don't need a source account
+        if self.kind not in [self.KIND_PROFIT_ACCOUNT, self.KIND_PROFIT_DEPOSIT_TO_ACCOUNT]:
+            if not any([self.source_account]) or not any([self.destination_account, self.destination_deposit]):
+                raise ValidationError('Transaction must have a source and a destination.')
+        else:
+            # Profit transactions only need a destination
+            if not any([self.destination_account, self.destination_deposit]):
+                raise ValidationError('Profit transaction must have a destination.')
         
         # Validate exchange rate for currency conversions
         if self.exchange_rate is not None:
@@ -148,6 +160,22 @@ class Transaction(models.Model):
             self.applied = True
             self.save(update_fields=['applied'])
             return
+        
+        if self.kind == self.KIND_PROFIT_ACCOUNT:
+            # Profit transactions add money to the destination account
+            if not self.destination_account:
+                return
+            self.applied = True
+            self.save(update_fields=['applied'])
+            return
+            
+        if self.kind == self.KIND_PROFIT_DEPOSIT_TO_ACCOUNT:
+            # Deposit profit transactions add money to the destination account
+            if not self.destination_account:
+                return
+            self.applied = True
+            self.save(update_fields=['applied'])
+            return
 
         # Currency conversion for account <-> wallet when account is not rial
         def is_account_rial(account: 'Account') -> bool:
@@ -210,6 +238,21 @@ class Transaction(models.Model):
         # No need to modify balances directly - they're calculated from transactions
         self.applied = False
         self.save(update_fields=['applied'])
+
+    def get_persian_created_at(self):
+        """Return Persian date for created_at"""
+        return get_persian_date_display(self.created_at)
+    get_persian_created_at.short_description = 'تاریخ ایجاد'
+    
+    def get_persian_issued_at(self):
+        """Return Persian date for issued_at"""
+        return get_persian_date_display(self.issued_at)
+    get_persian_issued_at.short_description = 'تاریخ صدور'
+    
+    def get_persian_scheduled_for(self):
+        """Return Persian date for scheduled_for"""
+        return get_persian_date_display(self.scheduled_for)
+    get_persian_scheduled_for.short_description = 'تاریخ برنامه‌ریزی'
 
     def __str__(self):
         return f"Txn({self.kind}) {self.amount} by {self.user.username}"

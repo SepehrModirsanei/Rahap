@@ -7,7 +7,7 @@ from .transaction_state_log_admin import TransactionStateLogInline
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'scheduled_for', 'created_at')
+    list_display = ('id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'get_persian_scheduled_for', 'get_persian_created_at')
     list_filter = ('kind', 'state')
     search_fields = ('user__username',)
     actions = ['apply_transactions']
@@ -15,7 +15,7 @@ class TransactionAdmin(admin.ModelAdmin):
     inlines = [TransactionStateLogInline]
 
     class Media:
-        js = ('finance/transaction_admin.js?v=2',)
+        js = ('finance/transaction_admin.js',)
 
     def save_model(self, request, obj, form, change):
         # Validate like serializer does

@@ -1,0 +1,46 @@
+{% load admin_urls %}
+<div class="user-account-summary">
+    <h3>📊 Financial Summary</h3>
+    <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
+        
+        <!-- Accounts Summary -->
+        <div class="summary-card" style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: #f9f9f9;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">🏦 Accounts</h4>
+            {% if original.account_set.all %}
+                <p><strong>Total Accounts:</strong> {{ original.account_set.count }}</p>
+                <p><strong>Rial Accounts:</strong> {{ original.account_set|length }}</p>
+                <p><strong>Dollar Accounts:</strong> {{ original.account_set|length }}</p>
+            {% else %}
+                <p>No accounts found</p>
+            {% endif %}
+        </div>
+        
+        <!-- Deposits Summary -->
+        <div class="summary-card" style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: #f9f9f9;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">💰 Deposits</h4>
+            {% if original.deposit_set.all %}
+                <p><strong>Total Deposits:</strong> {{ original.deposit_set.count }}</p>
+            {% else %}
+                <p>No deposits found</p>
+            {% endif %}
+        </div>
+        
+        <!-- Transactions Summary -->
+        <div class="summary-card" style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: #f9f9f9;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">📈 Transactions</h4>
+            {% if original.transaction_set.all %}
+                <p><strong>Total Transactions:</strong> {{ original.transaction_set.count }}</p>
+            {% else %}
+                <p>No transactions found</p>
+            {% endif %}
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="summary-card" style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: #e8f4fd;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">⚡ Quick Actions</h4>
+            <p><a href="{% url 'admin:finance_account_add' %}?user={{ original.pk }}" class="button">Add Account</a></p>
+            <p><a href="{% url 'admin:finance_deposit_add' %}?user={{ original.pk }}" class="button">Add Deposit</a></p>
+            <p><a href="{% url 'admin:finance_transaction_add' %}?user={{ original.pk }}" class="button">Add Transaction</a></p>
+        </div>
+    </div>
+</div>

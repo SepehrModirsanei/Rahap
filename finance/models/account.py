@@ -1,40 +1,44 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 from datetime import date, timedelta
+from ..utils import get_persian_date_display
 
 
 class Account(models.Model):
     ACCOUNT_TYPE_RIAL = 'rial'
     ACCOUNT_TYPE_GOLD = 'gold'
-    ACCOUNT_TYPE_FOREIGN = 'foreign'
-    ACCOUNT_TYPE_CURRENCY = 'currency'
+    ACCOUNT_TYPE_FOREIGN = 'foreign currency'
     ACCOUNT_TYPE_CHOICES = [
-        (ACCOUNT_TYPE_RIAL, 'Rial'),
-        (ACCOUNT_TYPE_GOLD, 'Gold'),
-        (ACCOUNT_TYPE_FOREIGN, 'Foreign'),
-        (ACCOUNT_TYPE_CURRENCY, 'Currency'),
+        (ACCOUNT_TYPE_RIAL, _('Rial account')),
+        (ACCOUNT_TYPE_GOLD, _('Gold account')),
+        (ACCOUNT_TYPE_FOREIGN, _('Foreign Currency account')),
     ]
 
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='accounts')
-    name = models.CharField(max_length=100)
-    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES)
-    initial_balance = models.DecimalField(max_digits=18, decimal_places=6, default=0)
-    monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='accounts', verbose_name=_('User'))
+    name = models.CharField(max_length=100, verbose_name=_('Account name'))
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES, verbose_name=_('Account type'))
+    initial_balance = models.DecimalField(max_digits=18, decimal_places=6, default=0, verbose_name=_('Initial balance'))
+    monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('Monthly profit rate'))
     # Funding options
     FUNDING_SOURCE_TRANSACTION = 'transaction'
     FUNDING_SOURCE_NONE = 'none'
     FUNDING_SOURCE_CHOICES = [
-        (FUNDING_SOURCE_TRANSACTION, 'Fund from Transaction'),
-        (FUNDING_SOURCE_NONE, 'No Initial Funding'),
+        (FUNDING_SOURCE_TRANSACTION, _('Fund from Transaction')),
+        (FUNDING_SOURCE_NONE, _('No Initial Funding')),
     ]
-    funding_source = models.CharField(max_length=20, choices=FUNDING_SOURCE_CHOICES, default=FUNDING_SOURCE_NONE)
-    initial_funding_amount = models.DecimalField(max_digits=18, decimal_places=6, default=0, validators=[MinValueValidator(0)])
+    funding_source = models.CharField(max_length=20, choices=FUNDING_SOURCE_CHOICES, default=FUNDING_SOURCE_NONE, verbose_name=_('Funding source'))
+    initial_funding_amount = models.DecimalField(max_digits=18, decimal_places=6, default=0, validators=[MinValueValidator(0)], verbose_name=_('Initial funding amount'))
     # e.g., 2.5 => 2.5% monthly
-    last_profit_accrual_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    last_profit_accrual_at = models.DateTimeField(null=True, blank=True, verbose_name=_('Last profit accrual'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created at'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Updated at'))
+    
+    class Meta:
+        verbose_name = _('Account')
+        verbose_name_plural = _('Accounts')
 
     @property
     def balance(self):
@@ -153,17 +157,65 @@ class Account(models.Model):
         profit = (average_balance * Decimal(self.monthly_profit_rate)) / Decimal(100)
         if profit <= 0:
             return
-        self.balance += profit
-        self.last_profit_accrual_at = now
-        self.save(update_fields=['balance', 'last_profit_accrual_at', 'updated_at'])
+        
+        # Create profit transaction instead of directly modifying balance
         from .transaction import Transaction
-        Transaction.objects.create(
+        profit_transaction = Transaction.objects.create(
             user=self.user,
             source_account=None,
             destination_account=self,
             amount=profit,
             kind=Transaction.KIND_PROFIT_ACCOUNT,
+            state=Transaction.STATE_DONE
         )
+        profit_transaction.apply()
+        
+        # Update the last profit accrual timestamp
+        self.last_profit_accrual_at = now
+        self.save(update_fields=['last_profit_accrual_at', 'updated_at'])
+
+    def get_persian_created_at(self):
+        """Return Persian date for created_at"""
+        return get_persian_date_display(self.created_at)
+    get_persian_created_at.short_description = 'تاریخ ایجاد'
+    
+    def get_persian_updated_at(self):
+        """Return Persian date for updated_at"""
+        return get_persian_date_display(self.updated_at)
+    get_persian_updated_at.short_description = 'تاریخ بروزرسانی'
+    
+    def get_persian_last_profit_accrual(self):
+        """Return Persian date for last_profit_accrual_at"""
+        return get_persian_date_display(self.last_profit_accrual_at)
+    get_persian_last_profit_accrual.short_description = 'آخرین سود'
+    
+    def get_profit_calculation_info(self):
+        """Return profit calculation start date and average balance"""
+        if self.last_profit_accrual_at:
+            # Calculate average balance for the 30-day period
+            from django.utils import timezone
+            from datetime import timedelta
+            from .account_daily_balance import AccountDailyBalance
+            
+            # Get the start of the profit calculation period (30 days before last accrual)
+            profit_start_date = self.last_profit_accrual_at - timedelta(days=30)
+            
+            # Calculate average balance over the 30-day period
+            daily_balances = AccountDailyBalance.objects.filter(
+                account=self,
+                snapshot_date__gte=profit_start_date.date(),
+                snapshot_date__lte=self.last_profit_accrual_at.date()
+            ).order_by('snapshot_date')
+            
+            if daily_balances.exists():
+                total_balance = sum(balance.balance for balance in daily_balances)
+                avg_balance = total_balance / daily_balances.count()
+                return f"شروع: {get_persian_date_display(profit_start_date)} - میانگین: ${avg_balance:,.2f}"
+            else:
+                return f"شروع: {get_persian_date_display(profit_start_date)} - میانگین: ${self.initial_balance:,.2f}"
+        else:
+            return "شروع نشده"
+    get_profit_calculation_info.short_description = 'اطلاعات سود'
 
     def __str__(self):
         return f"Account({self.user.username}:{self.name}:{self.account_type})"
