@@ -17,7 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.contrib import admin as django_admin
 from django.contrib.admin import AdminSite
-from django.urls import path, include
+from django.urls import path, include, re_path
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 from finance import admin_supervisor as supervisor_admin
 
 
@@ -30,8 +33,27 @@ class SupervisorAdminSite(AdminSite):
 supervisor_site = SupervisorAdminSite(name='supervisor_admin')
 supervisor_admin.register(supervisor_site)
 
+# Swagger configuration
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Rahap Finance API",
+        default_version='v1',
+        description="API documentation for Rahap Finance System",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="contact@rahap.local"),
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('supervisor-admin/', supervisor_site.urls),
     path('api/', include('finance.urls')),
+    
+    # Swagger URLs
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
