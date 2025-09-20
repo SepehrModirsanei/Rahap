@@ -6,7 +6,7 @@ class ReadOnlyTransactionInline(admin.TabularInline):
     model = Transaction
     extra = 0
     can_delete = False
-    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_wallet', 'destination_wallet', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
+    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
     fields = readonly_fields
 
     def has_add_permission(self, request, obj=None):
@@ -19,17 +19,17 @@ class DepositTxnInInline(ReadOnlyTransactionInline):
 
 @admin.register(Deposit)
 class DepositAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'wallet', 'initial_balance', 'monthly_profit_rate', 'funding_source')
+    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'funding_source')
     list_filter = ('funding_source',)
-    search_fields = ('user__username', 'wallet__user__username')
+    search_fields = ('user__username',)
     actions = ['accrue_profit_now']
     inlines = [DepositTxnInInline]
     fieldsets = (
         ('Basic Information', {
             'fields': ('user', 'initial_balance', 'monthly_profit_rate')
         }),
-        ('Wallet & Funding', {
-            'fields': ('wallet', 'funding_source'),
+        ('Funding', {
+            'fields': ('funding_source',),
             'description': 'Choose how to fund this deposit initially'
         }),
     )

@@ -1,12 +1,12 @@
 from django.contrib import admin
-from ..models import User, Wallet, Account, Deposit, Transaction, AccountDailyBalance
+from ..models import User, Account, Deposit, Transaction, AccountDailyBalance
 
 
 class ReadOnlyTransactionInline(admin.TabularInline):
     model = Transaction
     extra = 0
     can_delete = False
-    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_wallet', 'destination_wallet', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
+    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
     fields = readonly_fields
 
     def has_add_permission(self, request, obj=None):
@@ -17,14 +17,6 @@ class ReadOnlyTransactionInline(admin.TabularInline):
 
     def has_delete_permission(self, request, obj=None):
         return False
-
-
-class WalletTxnOutInline(ReadOnlyTransactionInline):
-    fk_name = 'source_wallet'
-
-
-class WalletTxnInInline(ReadOnlyTransactionInline):
-    fk_name = 'destination_wallet'
 
 
 class AccountTxnOutInline(ReadOnlyTransactionInline):
@@ -56,29 +48,12 @@ class ReadOnlyUserAdmin(admin.ModelAdmin):
         return False
 
 
-class ReadOnlyWalletAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'balance', 'currency', 'created_at')
-    search_fields = ('user__username',)
-    list_filter = ('currency', 'created_at')
-    inlines = [WalletTxnOutInline, WalletTxnInInline]
-    readonly_fields = ('user', 'balance', 'currency', 'created_at', 'updated_at')
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-
 class ReadOnlyAccountAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'name', 'account_type', 'balance', 'monthly_profit_rate', 'last_profit_accrual_at')
     list_filter = ('account_type', 'monthly_profit_rate')
     search_fields = ('user__username', 'name')
     inlines = [AccountTxnOutInline, AccountTxnInInline]
-    readonly_fields = ('user', 'wallet', 'name', 'account_type', 'balance', 'initial_balance', 'monthly_profit_rate', 'last_profit_accrual_at', 'created_at', 'updated_at')
+    readonly_fields = ('user', 'name', 'account_type', 'balance', 'initial_balance', 'monthly_profit_rate', 'last_profit_accrual_at', 'created_at', 'updated_at')
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -91,11 +66,11 @@ class ReadOnlyAccountAdmin(admin.ModelAdmin):
 
 
 class ReadOnlyDepositAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'wallet', 'amount', 'monthly_profit_rate', 'last_profit_accrual_at')
-    search_fields = ('user__username', 'wallet__user__username')
+    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'last_profit_accrual_at')
+    search_fields = ('user__username',)
     list_filter = ('monthly_profit_rate', 'created_at')
     inlines = [DepositTxnInInline]
-    readonly_fields = ('user', 'wallet', 'amount', 'monthly_profit_rate', 'last_profit_accrual_at', 'created_at', 'updated_at')
+    readonly_fields = ('user', 'initial_balance', 'monthly_profit_rate', 'last_profit_accrual_at', 'created_at', 'updated_at')
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -112,7 +87,7 @@ class ReadOnlyTransactionAdmin(admin.ModelAdmin):
     list_filter = ('kind', 'applied', 'scheduled_for', 'created_at')
     search_fields = ('user__username',)
     date_hierarchy = 'created_at'
-    readonly_fields = ('user', 'source_wallet', 'destination_wallet', 'source_account', 'destination_account', 'destination_deposit', 'amount', 'kind', 'exchange_rate', 'applied', 'issued_at', 'scheduled_for', 'created_at')
+    readonly_fields = ('user', 'source_account', 'destination_account', 'destination_deposit', 'amount', 'kind', 'exchange_rate', 'applied', 'issued_at', 'scheduled_for', 'created_at')
 
     def has_add_permission(self, request, obj=None):
         return False

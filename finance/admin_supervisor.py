@@ -20,8 +20,8 @@ class AccountSupervisorAdmin(ReadOnlyAdmin):
 
 
 class DepositSupervisorAdmin(ReadOnlyAdmin):
-    list_display = ('id', 'user', 'wallet', 'amount', 'monthly_profit_rate', 'last_profit_accrual_at')
-    search_fields = ('user__username', 'wallet__user__username')
+    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'last_profit_accrual_at')
+    search_fields = ('user__username',)
 
 
 def register(site: admin.AdminSite):

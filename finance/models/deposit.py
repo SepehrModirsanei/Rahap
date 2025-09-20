@@ -6,19 +6,16 @@ from decimal import Decimal
 
 class Deposit(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='deposits')
-    wallet = models.ForeignKey('Wallet', on_delete=models.CASCADE, related_name='deposits')
     initial_balance = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)])
     monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     # Funding options
-    FUNDING_SOURCE_WALLET = 'wallet'
     FUNDING_SOURCE_TRANSACTION = 'transaction'
     FUNDING_SOURCE_NONE = 'none'
     FUNDING_SOURCE_CHOICES = [
-        (FUNDING_SOURCE_WALLET, 'Fund from User Wallet'),
         (FUNDING_SOURCE_TRANSACTION, 'Fund from Transaction'),
         (FUNDING_SOURCE_NONE, 'No Initial Funding'),
     ]
-    funding_source = models.CharField(max_length=20, choices=FUNDING_SOURCE_CHOICES, default=FUNDING_SOURCE_WALLET)
+    funding_source = models.CharField(max_length=20, choices=FUNDING_SOURCE_CHOICES, default=FUNDING_SOURCE_NONE)
     # Profit goes to wallet (not compounded)
     last_profit_accrual_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -39,56 +36,51 @@ class Deposit(models.Model):
             applied=True
         ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
         
-        outgoing = Transaction.objects.filter(
-            source_deposit=self,
-            applied=True
-        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
-        
-        return self.initial_balance + incoming - outgoing
+        # Deposits can only receive money, not send it
+        return self.initial_balance + incoming
 
     def save(self, *args, **kwargs):
         is_new = not self.pk
         
         if is_new:
-            # Auto-select user's wallet if not specified
-            if not self.wallet_id and self.user_id:
-                # Ensure user has a wallet
-                if not hasattr(self.user, 'wallet'):
-                    from .wallet import Wallet
-                    Wallet.objects.create(user=self.user)
-                self.wallet = self.user.wallet
+            # Handle initial funding from transaction
+            if self.funding_source == self.FUNDING_SOURCE_TRANSACTION and self.initial_balance > 0:
+                # Set initial balance to funding amount
+                self.initial_balance = self.initial_balance
         
         super().save(*args, **kwargs)
 
     def clean(self):
-        # Ensure wallet belongs to user
-        from django.core.exceptions import ValidationError
-        if self.wallet and self.user and self.wallet.user_id != self.user_id:
-            raise ValidationError('Wallet must belong to the same user as the deposit.')
-        
         # Validate funding based on funding source
-        if not self.pk and self.funding_source == self.FUNDING_SOURCE_WALLET and self.initial_balance is not None:
-            if Decimal(self.wallet.balance) < Decimal(self.initial_balance):
-                raise ValidationError(f'Insufficient wallet balance for initial deposit amount. Available: {self.wallet.balance}, Required: {self.initial_balance}')
+        if not self.pk and self.funding_source == self.FUNDING_SOURCE_TRANSACTION and self.initial_balance is not None:
+            # For transaction funding, we'll validate when the transaction is created
+            pass
 
     def accrue_monthly_profit(self):
         now = timezone.now()
         if self.monthly_profit_rate and (not self.last_profit_accrual_at or (now - self.last_profit_accrual_at).days >= 28):
             profit = (self.initial_balance * self.monthly_profit_rate) / 100
-            # credit wallet
-            self.wallet.balance += profit
-            self.wallet.save(update_fields=['balance', 'updated_at'])
+            # Find user's default account to credit profit
+            default_account = self.user.accounts.filter(account_type='rial').first()
+            if not default_account:
+                # Create a default rial account if none exists
+                from .account import Account
+                default_account = Account.objects.create(
+                    user=self.user,
+                    name='Default Rial Account',
+                    account_type=Account.ACCOUNT_TYPE_RIAL,
+                    initial_balance=Decimal('0.00')
+                )
+            
             self.last_profit_accrual_at = now
             self.save(update_fields=['last_profit_accrual_at', 'updated_at'])
             from .transaction import Transaction
             Transaction.objects.create(
                 user=self.user,
                 source_account=None,
-                destination_account=None,
-                source_wallet=None,
-                destination_wallet=self.wallet,
+                destination_account=default_account,
                 amount=profit,
-                kind=Transaction.KIND_PROFIT_DEPOSIT_TO_WALLET,
+                kind=Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT,
             )
 
     def __str__(self):

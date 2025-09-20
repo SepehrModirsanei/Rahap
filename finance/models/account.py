@@ -18,17 +18,14 @@ class Account(models.Model):
     ]
 
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='accounts')
-    wallet = models.ForeignKey('Wallet', on_delete=models.CASCADE, related_name='accounts')
     name = models.CharField(max_length=100)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES)
     initial_balance = models.DecimalField(max_digits=18, decimal_places=6, default=0)
     monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     # Funding options
-    FUNDING_SOURCE_WALLET = 'wallet'
     FUNDING_SOURCE_TRANSACTION = 'transaction'
     FUNDING_SOURCE_NONE = 'none'
     FUNDING_SOURCE_CHOICES = [
-        (FUNDING_SOURCE_WALLET, 'Fund from User Wallet'),
         (FUNDING_SOURCE_TRANSACTION, 'Fund from Transaction'),
         (FUNDING_SOURCE_NONE, 'No Initial Funding'),
     ]
@@ -43,38 +40,54 @@ class Account(models.Model):
     def balance(self):
         """Calculate current balance based on initial balance and all transactions"""
         from .transaction import Transaction
+        
         # Get all transactions that affect this account
-        incoming = Transaction.objects.filter(
+        incoming_txns = Transaction.objects.filter(
             destination_account=self,
             applied=True
-        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        )
         
-        outgoing = Transaction.objects.filter(
+        outgoing_txns = Transaction.objects.filter(
             source_account=self,
             applied=True
-        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        )
         
-        return self.initial_balance + incoming - outgoing
+        # Calculate incoming amount (considering exchange rates)
+        incoming_total = Decimal('0')
+        for txn in incoming_txns:
+            if txn.kind == Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
+                # For account-to-account transfers, we need to consider exchange rates
+                if (txn.source_account and txn.destination_account and 
+                    txn.source_account.account_type != txn.destination_account.account_type and
+                    txn.exchange_rate):
+                    # Cross-currency transfer: convert amount using exchange rate
+                    # The transaction amount is in source currency, we need destination currency
+                    converted_amount = Decimal(txn.amount) * Decimal(txn.exchange_rate)
+                    incoming_total += converted_amount
+                else:
+                    # Same currency or no exchange rate needed
+                    incoming_total += Decimal(txn.amount)
+            elif txn.kind == Transaction.KIND_CREDIT_INCREASE:
+                # Credit increase adds money directly to this account
+                incoming_total += Decimal(txn.amount)
+            elif txn.kind == Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT:
+                # Profit from deposit goes to this account
+                incoming_total += Decimal(txn.amount)
+            else:
+                # Other transaction types
+                incoming_total += Decimal(txn.amount)
+        
+        # Calculate outgoing amount (always in this account's currency)
+        outgoing_total = sum(Decimal(txn.amount) for txn in outgoing_txns)
+        
+        return self.initial_balance + incoming_total - outgoing_total
 
     def save(self, *args, **kwargs):
         is_new = not self.pk
         
         if is_new:
-            # Auto-select user's wallet if not specified
-            if not self.wallet_id and self.user_id:
-                # Ensure user has a wallet
-                if not hasattr(self.user, 'wallet'):
-                    from .wallet import Wallet
-                    Wallet.objects.create(user=self.user)
-                self.wallet = self.user.wallet
-            
-            # Handle initial funding
-            if self.funding_source == self.FUNDING_SOURCE_WALLET and self.initial_funding_amount > 0:
-                # Validate sufficient wallet balance
-                if self.wallet.balance < self.initial_funding_amount:
-                    from django.core.exceptions import ValidationError
-                    raise ValidationError(f'Insufficient wallet balance. Available: {self.wallet.balance}, Required: {self.initial_funding_amount}')
-                
+            # Handle initial funding from transaction
+            if self.funding_source == self.FUNDING_SOURCE_TRANSACTION and self.initial_funding_amount > 0:
                 # Set initial balance to funding amount
                 self.initial_balance = self.initial_funding_amount
         
@@ -126,8 +139,6 @@ class Account(models.Model):
             user=self.user,
             source_account=None,
             destination_account=self,
-            source_wallet=None,
-            destination_wallet=None,
             amount=profit,
             kind=Transaction.KIND_PROFIT_ACCOUNT,
         )

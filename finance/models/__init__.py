@@ -1,5 +1,4 @@
 from .user import User
-from .wallet import Wallet
 from .account import Account
 from .deposit import Deposit
 from .transaction import Transaction
@@ -8,7 +7,6 @@ from .transaction_state_log import TransactionStateLog
 
 __all__ = [
     'User',
-    'Wallet', 
     'Account',
     'Deposit',
     'Transaction',

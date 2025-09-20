@@ -19,7 +19,6 @@ treasury_admin_site = TreasuryAdminSite(name='treasury_admin')
 
 # Register Treasury Admin
 treasury_admin_site.register(User, TreasuryUserAdmin)
-treasury_admin_site.register(Wallet, TreasuryWalletAdmin)
 treasury_admin_site.register(Account, TreasuryAccountAdmin)
 treasury_admin_site.register(Deposit, TreasuryDepositAdmin)
 treasury_admin_site.register(Transaction, TreasuryTransactionAdmin)
@@ -37,7 +36,6 @@ operation_admin_site = OperationAdminSite(name='operation_admin')
 
 # Register Operation Admin
 operation_admin_site.register(User, OperationUserAdmin)
-operation_admin_site.register(Wallet, OperationWalletAdmin)
 operation_admin_site.register(Account, OperationAccountAdmin)
 operation_admin_site.register(Deposit, OperationDepositAdmin)
 operation_admin_site.register(Transaction, OperationTransactionAdmin)
@@ -55,7 +53,6 @@ readonly_admin_site_1 = ReadOnlyAdminSite1(name='readonly_admin_1')
 
 # Register Read-Only Admin 1
 readonly_admin_site_1.register(User, ReadOnlyUserAdmin)
-readonly_admin_site_1.register(Wallet, ReadOnlyWalletAdmin)
 readonly_admin_site_1.register(Account, ReadOnlyAccountAdmin)
 readonly_admin_site_1.register(Deposit, ReadOnlyDepositAdmin)
 readonly_admin_site_1.register(Transaction, ReadOnlyTransactionAdmin)
@@ -73,7 +70,6 @@ readonly_admin_site_2 = ReadOnlyAdminSite2(name='readonly_admin_2')
 
 # Register Read-Only Admin 2
 readonly_admin_site_2.register(User, AnalyticsUserAdmin)
-readonly_admin_site_2.register(Wallet, AnalyticsWalletAdmin)
 readonly_admin_site_2.register(Account, AnalyticsAccountAdmin)
 readonly_admin_site_2.register(Deposit, AnalyticsDepositAdmin)
 readonly_admin_site_2.register(Transaction, AnalyticsTransactionAdmin)

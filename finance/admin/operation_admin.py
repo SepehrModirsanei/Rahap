@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 from decimal import Decimal
-from ..models import User, Wallet, Account, Deposit, Transaction, AccountDailyBalance
+from ..models import User, Account, Deposit, Transaction, AccountDailyBalance
 from ..forms import TransactionAdminForm
 from .transaction_state_log_admin import TransactionStateLogInline
 
@@ -10,19 +10,11 @@ class ReadOnlyTransactionInline(admin.TabularInline):
     model = Transaction
     extra = 0
     can_delete = False
-    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_wallet', 'destination_wallet', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
+    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
     fields = readonly_fields
 
     def has_add_permission(self, request, obj=None):
         return False
-
-
-class WalletTxnOutInline(ReadOnlyTransactionInline):
-    fk_name = 'source_wallet'
-
-
-class WalletTxnInInline(ReadOnlyTransactionInline):
-    fk_name = 'destination_wallet'
 
 
 class AccountTxnOutInline(ReadOnlyTransactionInline):
@@ -54,20 +46,6 @@ class OperationUserAdmin(admin.ModelAdmin):
         updated = queryset.update(is_active=False)
         self.message_user(request, f"Deactivated {updated} user(s)")
     deactivate_users.short_description = 'Deactivate selected users'
-
-
-class OperationWalletAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'balance', 'currency', 'created_at')
-    search_fields = ('user__username',)
-    list_filter = ('currency',)
-    inlines = [WalletTxnOutInline, WalletTxnInInline]
-    readonly_fields = ('created_at', 'updated_at')
-    actions = ['view_wallet_summary']
-
-    def view_wallet_summary(self, request, queryset):
-        total_balance = sum(float(w.balance) for w in queryset)
-        self.message_user(request, f"Total balance across {queryset.count()} wallets: {total_balance:,.2f}")
-    view_wallet_summary.short_description = 'View wallet summary'
 
 
 class OperationAccountAdmin(admin.ModelAdmin):
@@ -103,8 +81,8 @@ class OperationAccountAdmin(admin.ModelAdmin):
 
 
 class OperationDepositAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'wallet', 'amount', 'monthly_profit_rate')
-    search_fields = ('user__username', 'wallet__user__username')
+    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate')
+    search_fields = ('user__username',)
     actions = ['accrue_profit_now']
     inlines = [DepositTxnInInline]
     readonly_fields = ('created_at', 'updated_at', 'last_profit_accrual_at')

@@ -7,12 +7,11 @@ from .admin_sites import (
     readonly_admin_site_2
 )
 
-from .views import UserViewSet, WalletViewSet, AccountViewSet, DepositViewSet, TransactionViewSet
+from .views import UserViewSet, AccountViewSet, DepositViewSet, TransactionViewSet
 
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
-router.register(r'wallets', WalletViewSet, basename='wallet')
 router.register(r'accounts', AccountViewSet, basename='account')
 router.register(r'deposits', DepositViewSet, basename='deposit')
 router.register(r'transactions', TransactionViewSet, basename='transaction')
