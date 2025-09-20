@@ -28,7 +28,7 @@ class TransactionFormTests(TestCase):
         if not hasattr(cls.user2, 'wallet'):
             Wallet.objects.create(user=cls.user2)
             
-        cls.user1.wallet.balance = Decimal('1000.00')
+        cls.user1.wallet.initial_balance = Decimal('1000.00')
         cls.user1.wallet.save()
         
         # Create accounts for user1
@@ -37,7 +37,7 @@ class TransactionFormTests(TestCase):
             wallet=cls.user1.wallet,
             name='Rial Account',
             account_type=Account.ACCOUNT_TYPE_RIAL,
-            balance=Decimal('500.00'),
+            initial_balance=Decimal('500.00'),
             monthly_profit_rate=Decimal('2.5')
         )
         
@@ -46,7 +46,7 @@ class TransactionFormTests(TestCase):
             wallet=cls.user1.wallet,
             name='USD Account',
             account_type=Account.ACCOUNT_TYPE_FOREIGN,
-            balance=Decimal('100.00'),
+            initial_balance=Decimal('100.00'),
             monthly_profit_rate=Decimal('1.0')
         )
         
@@ -55,7 +55,7 @@ class TransactionFormTests(TestCase):
             wallet=cls.user1.wallet,
             name='Gold Account',
             account_type=Account.ACCOUNT_TYPE_GOLD,
-            balance=Decimal('10.50'),
+            initial_balance=Decimal('10.50'),
             monthly_profit_rate=Decimal('0.5')
         )
 
@@ -66,13 +66,13 @@ class TransactionFormTests(TestCase):
         if not hasattr(self.user2, 'wallet'):
             Wallet.objects.create(user=self.user2)
             
-        self.user1.wallet.balance = Decimal('1000.00')
+        self.user1.wallet.initial_balance = Decimal('1000.00')
         self.user1.wallet.save()
-        self.rial_account.balance = Decimal('500.00')
+        self.rial_account.initial_balance = Decimal('500.00')
         self.rial_account.save()
-        self.usd_account.balance = Decimal('100.00')
+        self.usd_account.initial_balance = Decimal('100.00')
         self.usd_account.save()
-        self.gold_account.balance = Decimal('10.50')
+        self.gold_account.initial_balance = Decimal('10.50')
         self.gold_account.save()
 
     # ==================== BASIC TRANSACTION TESTS ====================
@@ -490,7 +490,7 @@ class TransactionFormTests(TestCase):
         deposit = Deposit.objects.create(
             user=self.user1,
             wallet=self.user1.wallet,
-            amount=Decimal('0.00'),  # Start with 0
+            initial_balance=Decimal('0.00'),  # Start with 0
             monthly_profit_rate=Decimal('2.0')
         )
         

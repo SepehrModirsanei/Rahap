@@ -161,8 +161,8 @@ class AdminCRUDTests(TestCase):
     def test_deposit_admin_crud(self):
         # fund user1 wallet first
         w = self.user1.wallet
-        w.balance = Decimal('100.00')
-        w.save(update_fields=['balance'])
+        w.initial_balance = Decimal('100.00')
+        w.save(update_fields=['initial_balance'])
         url_add = reverse('admin:finance_deposit_add')
         resp = self.client.post(
             url_add,

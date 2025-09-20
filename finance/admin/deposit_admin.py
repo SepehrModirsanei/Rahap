@@ -19,10 +19,20 @@ class DepositTxnInInline(ReadOnlyTransactionInline):
 
 @admin.register(Deposit)
 class DepositAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'wallet', 'amount', 'monthly_profit_rate')
+    list_display = ('id', 'user', 'wallet', 'initial_balance', 'monthly_profit_rate', 'funding_source')
+    list_filter = ('funding_source',)
     search_fields = ('user__username', 'wallet__user__username')
     actions = ['accrue_profit_now']
     inlines = [DepositTxnInInline]
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('user', 'initial_balance', 'monthly_profit_rate')
+        }),
+        ('Wallet & Funding', {
+            'fields': ('wallet', 'funding_source'),
+            'description': 'Choose how to fund this deposit initially'
+        }),
+    )
 
     def accrue_profit_now(self, request, queryset):
         count = 0

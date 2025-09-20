@@ -23,6 +23,12 @@ class WalletTxnInInline(ReadOnlyTransactionInline):
 
 @admin.register(Wallet)
 class WalletAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'balance', 'currency', 'created_at')
+    list_display = ('id', 'user', 'initial_balance', 'currency', 'created_at')
     search_fields = ('user__username',)
     inlines = [WalletTxnOutInline, WalletTxnInInline]
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('user', 'initial_balance', 'currency'),
+            'description': 'Initial balance is the starting amount for this wallet'
+        }),
+    )

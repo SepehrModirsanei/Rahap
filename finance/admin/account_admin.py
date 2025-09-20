@@ -25,11 +25,24 @@ class AccountTxnInInline(ReadOnlyTransactionInline):
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'name', 'account_type', 'balance', 'monthly_profit_rate')
-    list_filter = ('account_type',)
+    list_display = ('id', 'user', 'name', 'account_type', 'initial_balance', 'monthly_profit_rate', 'funding_source', 'initial_funding_amount')
+    list_filter = ('account_type', 'funding_source')
     search_fields = ('user__username', 'name')
     actions = ['accrue_profit_now', 'snapshot_today']
     inlines = [AccountTxnOutInline, AccountTxnInInline]
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('user', 'name', 'account_type', 'monthly_profit_rate')
+        }),
+        ('Wallet & Initial Balance', {
+            'fields': ('wallet', 'initial_balance'),
+            'description': 'Initial balance is the starting amount for this account'
+        }),
+        ('Initial Funding', {
+            'fields': ('funding_source', 'initial_funding_amount'),
+            'description': 'Choose how to fund this account initially'
+        }),
+    )
 
     def accrue_profit_now(self, request, queryset):
         count = 0

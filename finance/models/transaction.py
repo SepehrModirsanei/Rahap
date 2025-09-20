@@ -121,30 +121,20 @@ class Transaction(models.Model):
         if self.kind == self.KIND_ADD_TO_WALLET:
             if not self.destination_wallet:
                 return
-            amt = Decimal(self.amount)
-            self.destination_wallet.balance += amt
-            self.destination_wallet.save(update_fields=['balance', 'updated_at'])
+            # No need to modify balance directly - it's calculated from transactions
             self.applied = True
             self.save(update_fields=['applied'])
             return
         if self.kind == self.KIND_REMOVE_FROM_WALLET:
             if not self.source_wallet:
                 return
-            amt = Decimal(self.amount)
-            self.source_wallet.balance -= amt
-            self.source_wallet.save(update_fields=['balance', 'updated_at'])
+            # No need to modify balance directly - it's calculated from transactions
             self.applied = True
             self.save(update_fields=['applied'])
             return
 
         if self.kind == self.KIND_WALLET_TO_DEPOSIT_INITIAL:
-            # Move from wallet to create/initialize deposit balance
-            amt = Decimal(self.amount)
-            self.source_wallet.balance -= amt
-            self.source_wallet.save(update_fields=['balance', 'updated_at'])
-            if self.destination_deposit:
-                self.destination_deposit.amount += amt
-                self.destination_deposit.save(update_fields=['amount', 'updated_at'])
+            # No need to modify balances directly - they're calculated from transactions
             self.applied = True
             self.save(update_fields=['applied'])
             return
@@ -154,43 +144,9 @@ class Transaction(models.Model):
             from .account import Account
             return account.account_type == Account.ACCOUNT_TYPE_RIAL
 
-        # Deduct from sources
-        if self.source_wallet:
-            amt = Decimal(self.amount)
-            self.source_wallet.balance -= amt
-            self.source_wallet.save(update_fields=['balance', 'updated_at'])
-        if self.source_account:
-            amt = Decimal(self.amount)
-            self.source_account.balance -= amt
-            self.source_account.save(update_fields=['balance', 'updated_at'])
+        # No need to modify balances directly - they're calculated from transactions
 
-        # Credit destinations, possibly with conversion
-        if self.destination_wallet:
-            amt = Decimal(self.amount)
-            credit_amount = amt
-            if self.source_account and not is_account_rial(self.source_account):
-                # account -> wallet conversion uses exchange_rate (account unit -> IRR)
-                if self.exchange_rate is None:
-                    credit_amount = amt
-                else:
-                    credit_amount = amt * Decimal(self.exchange_rate)
-            self.destination_wallet.balance += credit_amount
-            self.destination_wallet.save(update_fields=['balance', 'updated_at'])
-
-        if self.destination_account:
-            amt = Decimal(self.amount)
-            credit_amount = amt
-            if not is_account_rial(self.destination_account) and self.source_wallet:
-                # wallet(IRR) -> non-rial account, use exchange_rate (account unit -> IRR), so account_amount = wallet_amount / rate
-                if self.exchange_rate is None:
-                    credit_amount = amt
-                else:
-                    exchange_rate = Decimal(self.exchange_rate)
-                    if exchange_rate == 0:
-                        raise ValidationError('Exchange rate cannot be zero for currency conversion.')
-                    credit_amount = amt / exchange_rate
-            self.destination_account.balance += credit_amount
-            self.destination_account.save(update_fields=['balance', 'updated_at'])
+        # No need to modify balances directly - they're calculated from transactions
         self.applied = True
         self.save(update_fields=['applied'])
 
@@ -201,23 +157,17 @@ class Transaction(models.Model):
             return
         amt = Decimal(self.amount)
         if self.kind == self.KIND_ADD_TO_WALLET and self.destination_wallet:
-            self.destination_wallet.balance -= amt
-            self.destination_wallet.save(update_fields=['balance', 'updated_at'])
+            # No need to modify balance directly - it's calculated from transactions
             self.applied = False
             self.save(update_fields=['applied'])
             return
         if self.kind == self.KIND_REMOVE_FROM_WALLET and self.source_wallet:
-            self.source_wallet.balance += amt
-            self.source_wallet.save(update_fields=['balance', 'updated_at'])
+            # No need to modify balance directly - it's calculated from transactions
             self.applied = False
             self.save(update_fields=['applied'])
             return
         if self.kind == self.KIND_WALLET_TO_DEPOSIT_INITIAL and self.source_wallet:
-            self.source_wallet.balance += amt
-            self.source_wallet.save(update_fields=['balance', 'updated_at'])
-            if self.destination_deposit:
-                self.destination_deposit.amount -= amt
-                self.destination_deposit.save(update_fields=['amount', 'updated_at'])
+            # No need to modify balances directly - they're calculated from transactions
             self.applied = False
             self.save(update_fields=['applied'])
             return
@@ -226,38 +176,7 @@ class Transaction(models.Model):
             from .account import Account
             return account.account_type == Account.ACCOUNT_TYPE_RIAL
 
-        # Reverse credit to destinations
-        if self.destination_wallet:
-            credit_amount = amt
-            if self.source_account and not is_account_rial(self.source_account):
-                if self.exchange_rate is None:
-                    credit_amount = amt
-                else:
-                    credit_amount = amt * Decimal(self.exchange_rate)
-            self.destination_wallet.balance -= credit_amount
-            self.destination_wallet.save(update_fields=['balance', 'updated_at'])
-
-        if self.destination_account:
-            credit_amount = amt
-            if not is_account_rial(self.destination_account) and self.source_wallet:
-                if self.exchange_rate is None:
-                    credit_amount = amt
-                else:
-                    exchange_rate = Decimal(self.exchange_rate)
-                    if exchange_rate == 0:
-                        raise ValidationError('Exchange rate cannot be zero for currency conversion.')
-                    credit_amount = amt / exchange_rate
-            self.destination_account.balance -= credit_amount
-            self.destination_account.save(update_fields=['balance', 'updated_at'])
-
-        # Reverse deductions from sources
-        if self.source_wallet:
-            self.source_wallet.balance += amt
-            self.source_wallet.save(update_fields=['balance', 'updated_at'])
-        if self.source_account:
-            self.source_account.balance += amt
-            self.source_account.save(update_fields=['balance', 'updated_at'])
-
+        # No need to modify balances directly - they're calculated from transactions
         self.applied = False
         self.save(update_fields=['applied'])
 

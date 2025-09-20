@@ -21,18 +21,63 @@ class Account(models.Model):
     wallet = models.ForeignKey('Wallet', on_delete=models.CASCADE, related_name='accounts')
     name = models.CharField(max_length=100)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES)
-    balance = models.DecimalField(max_digits=18, decimal_places=6, default=0)
     initial_balance = models.DecimalField(max_digits=18, decimal_places=6, default=0)
     monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    # Funding options
+    FUNDING_SOURCE_WALLET = 'wallet'
+    FUNDING_SOURCE_TRANSACTION = 'transaction'
+    FUNDING_SOURCE_NONE = 'none'
+    FUNDING_SOURCE_CHOICES = [
+        (FUNDING_SOURCE_WALLET, 'Fund from User Wallet'),
+        (FUNDING_SOURCE_TRANSACTION, 'Fund from Transaction'),
+        (FUNDING_SOURCE_NONE, 'No Initial Funding'),
+    ]
+    funding_source = models.CharField(max_length=20, choices=FUNDING_SOURCE_CHOICES, default=FUNDING_SOURCE_NONE)
+    initial_funding_amount = models.DecimalField(max_digits=18, decimal_places=6, default=0, validators=[MinValueValidator(0)])
     # e.g., 2.5 => 2.5% monthly
     last_profit_accrual_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def balance(self):
+        """Calculate current balance based on initial balance and all transactions"""
+        from .transaction import Transaction
+        # Get all transactions that affect this account
+        incoming = Transaction.objects.filter(
+            destination_account=self,
+            applied=True
+        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        
+        outgoing = Transaction.objects.filter(
+            source_account=self,
+            applied=True
+        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        
+        return self.initial_balance + incoming - outgoing
+
     def save(self, *args, **kwargs):
-        if not self.pk:
-            # capture initial balance on first save
-            self.initial_balance = Decimal(self.balance)
+        is_new = not self.pk
+        
+        if is_new:
+            # Auto-select user's wallet if not specified
+            if not self.wallet_id and self.user_id:
+                # Ensure user has a wallet
+                if not hasattr(self.user, 'wallet'):
+                    from .wallet import Wallet
+                    Wallet.objects.create(user=self.user)
+                self.wallet = self.user.wallet
+            
+            # Handle initial funding
+            if self.funding_source == self.FUNDING_SOURCE_WALLET and self.initial_funding_amount > 0:
+                # Validate sufficient wallet balance
+                if self.wallet.balance < self.initial_funding_amount:
+                    from django.core.exceptions import ValidationError
+                    raise ValidationError(f'Insufficient wallet balance. Available: {self.wallet.balance}, Required: {self.initial_funding_amount}')
+                
+                # Set initial balance to funding amount
+                self.initial_balance = self.initial_funding_amount
+        
         super().save(*args, **kwargs)
 
     def accrue_monthly_profit(self):
@@ -48,7 +93,7 @@ class Account(models.Model):
         segments = []
         # Build segments between dates with constant balance
         prev_date = period_start
-        prev_balance = Decimal(carry.balance) if carry else Decimal(self.balance)
+        prev_balance = Decimal(carry.balance) if carry else Decimal(self.initial_balance)
         for snap in snapshots:
             d = snap.snapshot_date
             if d > prev_date:
