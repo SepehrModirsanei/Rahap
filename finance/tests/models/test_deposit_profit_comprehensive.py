@@ -49,10 +49,10 @@ class DepositProfitComprehensiveTests(FinanceTestCase):
         # Check that timestamp was updated
         self.assertIsNotNone(self.deposit.last_profit_accrual_at)
 
-    def test_accrue_monthly_profit_after_28_days(self):
-        """Test profit accrual after 28 days"""
-        # Set last accrual to 29 days ago
-        past_time = timezone.now() - timedelta(days=29)
+    def test_accrue_monthly_profit_after_30_days(self):
+        """Test profit accrual after 30 days"""
+        # Set last accrual to 31 days ago
+        past_time = timezone.now() - timedelta(days=31)
         self.deposit.last_profit_accrual_at = past_time
         self.deposit.save()
         
@@ -67,8 +67,8 @@ class DepositProfitComprehensiveTests(FinanceTestCase):
         )
         self.assertEqual(profit_transactions.count(), 1)
 
-    def test_accrue_monthly_profit_before_28_days(self):
-        """Test that profit is not accrued before 28 days"""
+    def test_accrue_monthly_profit_before_30_days(self):
+        """Test that profit is not accrued before 30 days"""
         # Set last accrual to 20 days ago
         past_time = timezone.now() - timedelta(days=20)
         self.deposit.last_profit_accrual_at = past_time
@@ -237,10 +237,10 @@ class DepositProfitComprehensiveTests(FinanceTestCase):
         self.assertIsNotNone(self.deposit.last_profit_accrual_at)
         self.assertGreater(self.deposit.last_profit_accrual_at, initial_time)
 
-    def test_accrue_monthly_profit_edge_case_28_days_exact(self):
-        """Test profit accrual at exactly 28 days"""
-        # Set last accrual to exactly 28 days ago
-        past_time = timezone.now() - timedelta(days=28)
+    def test_accrue_monthly_profit_edge_case_30_days_exact(self):
+        """Test profit accrual at exactly 30 days"""
+        # Set last accrual to exactly 30 days ago
+        past_time = timezone.now() - timedelta(days=30)
         self.deposit.last_profit_accrual_at = past_time
         self.deposit.save()
         
