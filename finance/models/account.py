@@ -56,8 +56,19 @@ class Account(models.Model):
                     txn.source_account.account_type != txn.destination_account.account_type and
                     txn.exchange_rate):
                     # Cross-currency transfer: convert amount using exchange rate
-                    # The transaction amount is in source currency, we need destination currency
-                    converted_amount = Decimal(txn.amount) * Decimal(txn.exchange_rate)
+                    # Exchange rate represents "rials per foreign currency/gold"
+                    if (txn.source_account.account_type in ['foreign currency', 'gold'] and 
+                        txn.destination_account.account_type == 'rial'):
+                        # Foreign/Gold → Rial: amount * exchange_rate
+                        converted_amount = Decimal(txn.amount) * Decimal(txn.exchange_rate)
+                    elif (txn.source_account.account_type == 'rial' and 
+                          txn.destination_account.account_type in ['foreign currency', 'gold']):
+                        # Rial → Foreign/Gold: amount / exchange_rate
+                        converted_amount = Decimal(txn.amount) / Decimal(txn.exchange_rate)
+                    else:
+                        # Other cross-currency combinations (e.g., gold to foreign currency)
+                        # For now, use multiplication as default
+                        converted_amount = Decimal(txn.amount) * Decimal(txn.exchange_rate)
                     incoming_total += converted_amount
                 else:
                     # Same currency or no exchange rate needed
@@ -76,17 +87,9 @@ class Account(models.Model):
         outgoing_total = Decimal('0')
         for txn in outgoing_txns:
             if txn.kind == Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
-                # For account-to-account transfers, we need to consider exchange rates
-                if (txn.source_account and txn.destination_account and 
-                    txn.source_account.account_type != txn.destination_account.account_type and
-                    txn.exchange_rate):
-                    # Cross-currency transfer: convert amount using exchange rate
-                    # The transaction amount is in source currency, we need destination currency
-                    converted_amount = Decimal(txn.amount) * Decimal(txn.exchange_rate)
-                    outgoing_total += converted_amount
-                else:
-                    # Same currency or no exchange rate needed
-                    outgoing_total += Decimal(txn.amount)
+                # For account-to-account transfers, the source account loses the amount in its own currency
+                # No conversion needed for outgoing amount - it's always in the source account's currency
+                outgoing_total += Decimal(txn.amount)
             elif txn.kind == Transaction.KIND_WITHDRAWAL_REQUEST:
                 # Withdrawal request removes money from this account
                 outgoing_total += Decimal(txn.amount)

@@ -109,12 +109,13 @@ class AccountBalanceComprehensiveTests(FinanceTestCase):
     def test_balance_account_to_account_cross_currency(self):
         """Test balance with cross-currency transfer using exchange rate"""
         # Create cross-currency transfer with exchange rate
+        # Rial → Gold: amount / exchange_rate (since exchange_rate = rials per gold)
         Transaction.objects.create(
             user=self.user,
             source_account=self.rial_account,
             destination_account=self.gold_account,
             amount=Decimal('100000.00'),  # Amount in rial
-            exchange_rate=Decimal('0.0001'),  # 1 rial = 0.0001 gold
+            exchange_rate=Decimal('1000.0'),  # 1 gold = 1000 rial (exchange_rate = rials per gold)
             kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT,
             state=Transaction.STATE_DONE,
             applied=True
@@ -122,14 +123,36 @@ class AccountBalanceComprehensiveTests(FinanceTestCase):
         
         # Rial account should decrease by full amount
         expected_rial_balance = Decimal('1000000.00') - Decimal('100000.00')
-        # Note: The actual balance calculation might be more complex due to exchange rate handling
-        # We'll check that the balance decreased
-        self.assertLess(self.rial_account.balance, Decimal('1000000.00'))
+        self.assertEqual(self.rial_account.balance, expected_rial_balance)
         
-        # Gold account should increase by converted amount
-        converted_amount = Decimal('100000.00') * Decimal('0.0001')
+        # Gold account should increase by converted amount (rial / exchange_rate)
+        converted_amount = Decimal('100000.00') / Decimal('1000.0')  # 100000 rial / 1000 rial/gold = 100 gold
         expected_gold_balance = Decimal('10.00') + converted_amount
         self.assertEqual(self.gold_account.balance, expected_gold_balance)
+
+    def test_balance_account_to_account_cross_currency_reverse(self):
+        """Test balance with cross-currency transfer in reverse direction (Gold → Rial)"""
+        # Create cross-currency transfer in reverse direction
+        # Gold → Rial: amount * exchange_rate (since exchange_rate = rials per gold)
+        Transaction.objects.create(
+            user=self.user,
+            source_account=self.gold_account,
+            destination_account=self.rial_account,
+            amount=Decimal('5.00'),  # Amount in gold
+            exchange_rate=Decimal('1000.0'),  # 1 gold = 1000 rial (exchange_rate = rials per gold)
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT,
+            state=Transaction.STATE_DONE,
+            applied=True
+        )
+        
+        # Gold account should decrease by full amount
+        expected_gold_balance = Decimal('10.00') - Decimal('5.00')
+        self.assertEqual(self.gold_account.balance, expected_gold_balance)
+        
+        # Rial account should increase by converted amount (gold * exchange_rate)
+        converted_amount = Decimal('5.00') * Decimal('1000.0')  # 5 gold * 1000 rial/gold = 5000 rial
+        expected_rial_balance = Decimal('1000000.00') + converted_amount
+        self.assertEqual(self.rial_account.balance, expected_rial_balance)
 
     def test_balance_account_to_account_no_exchange_rate(self):
         """Test balance with account-to-account transfer without exchange rate"""
@@ -191,13 +214,13 @@ class AccountBalanceComprehensiveTests(FinanceTestCase):
 
     def test_balance_ignores_unapplied_transactions(self):
         """Test that unapplied transactions don't affect balance"""
-        # Create unapplied transaction
+        # Create transaction in waiting state (not done, so it won't be auto-applied)
         Transaction.objects.create(
             user=self.user,
             destination_account=self.rial_account,
             amount=Decimal('200000.00'),
             kind=Transaction.KIND_CREDIT_INCREASE,
-            state=Transaction.STATE_DONE,
+            state=Transaction.STATE_WAITING_TREASURY,  # Not done state
             applied=False  # Not applied
         )
         

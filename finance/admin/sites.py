@@ -12,6 +12,7 @@ from .base import (
     ReadOnlyMixin, TreasuryMixin, OperationMixin, AnalyticsMixin
 )
 from .user_admin import UserAdmin
+from .account_admin import AccountAdmin
 from ..models import User, Account, Deposit, Transaction, AccountDailyBalance, TransactionStateLog
 from ..models.transaction_proxies import (
     WithdrawalRequest, CreditIncrease, AccountTransfer, 
@@ -30,8 +31,8 @@ class TreasuryUserAdmin(TreasuryMixin, UserAdmin):
     pass
 
 
-class TreasuryAccountAdmin(TreasuryMixin, BaseAccountAdmin):
-    """Treasury account admin with full permissions"""
+class TreasuryAccountAdmin(TreasuryMixin, AccountAdmin):
+    """Treasury account admin with full permissions and enhanced profit calculation fields"""
     pass
 
 
@@ -56,8 +57,8 @@ class OperationUserAdmin(OperationMixin, UserAdmin):
     pass
 
 
-class OperationAccountAdmin(OperationMixin, BaseAccountAdmin):
-    """Operation account admin with limited permissions"""
+class OperationAccountAdmin(OperationMixin, AccountAdmin):
+    """Operation account admin with limited permissions and enhanced profit calculation fields"""
     pass
 
 
@@ -82,8 +83,8 @@ class ReadOnlyUserAdmin(ReadOnlyMixin, UserAdmin):
     pass
 
 
-class ReadOnlyAccountAdmin(ReadOnlyMixin, BaseAccountAdmin):
-    """Read-only account admin for financial overview"""
+class ReadOnlyAccountAdmin(ReadOnlyMixin, AccountAdmin):
+    """Read-only account admin for financial overview with enhanced profit calculation fields"""
     pass
 
 
@@ -118,9 +119,9 @@ class AnalyticsUserAdmin(AnalyticsMixin, ReadOnlyMixin, UserAdmin):
     transaction_count.short_description = 'تعداد تراکنش‌ها'
 
 
-class AnalyticsAccountAdmin(AnalyticsMixin, ReadOnlyMixin, BaseAccountAdmin):
-    """Analytics account admin with enhanced display"""
-    list_display = BaseAccountAdmin.list_display + ('transaction_count', 'profit_earned')
+class AnalyticsAccountAdmin(AnalyticsMixin, ReadOnlyMixin, AccountAdmin):
+    """Analytics account admin with enhanced display and profit calculation fields"""
+    list_display = AccountAdmin.list_display + ('transaction_count', 'profit_earned')
     
     def transaction_count(self, obj):
         """Display number of transactions for account"""

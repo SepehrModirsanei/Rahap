@@ -191,29 +191,25 @@ class TransactionComprehensiveTests(FinanceTestCase):
 
     def test_transaction_apply_missing_destination_account(self):
         """Test that credit increase without destination account is not applied"""
-        transaction = Transaction.objects.create(
-            user=self.user,
-            amount=Decimal('100000.00'),
-            kind=Transaction.KIND_CREDIT_INCREASE,
-            state=Transaction.STATE_DONE
-        )
-        
-        # Try to apply - this should raise ValidationError
+        # This should raise ValidationError during creation due to auto-apply
         with self.assertRaises(ValidationError):
-            transaction.apply()
+            Transaction.objects.create(
+                user=self.user,
+                amount=Decimal('100000.00'),
+                kind=Transaction.KIND_CREDIT_INCREASE,
+                state=Transaction.STATE_DONE  # Done state to trigger validation
+            )
 
     def test_transaction_apply_missing_source_account(self):
         """Test that withdrawal request without source account is not applied"""
-        transaction = Transaction.objects.create(
-            user=self.user,
-            amount=Decimal('100000.00'),
-            kind=Transaction.KIND_WITHDRAWAL_REQUEST,
-            state=Transaction.STATE_DONE
-        )
-        
-        # Try to apply - this should raise ValidationError
+        # This should raise ValidationError during creation due to auto-apply
         with self.assertRaises(ValidationError):
-            transaction.apply()
+            Transaction.objects.create(
+                user=self.user,
+                amount=Decimal('100000.00'),
+                kind=Transaction.KIND_WITHDRAWAL_REQUEST,
+                state=Transaction.STATE_DONE  # Done state to trigger validation
+            )
 
     def test_transaction_advance_state_waiting_treasury_to_waiting_sandogh(self):
         """Test state advancement from WAITING_TREASURY to WAITING_SANDOGH"""

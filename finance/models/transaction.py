@@ -179,7 +179,8 @@ class Transaction(models.Model):
             return
 
         if self.kind == self.KIND_ACCOUNT_TO_DEPOSIT_INITIAL:
-            # No need to modify balances directly - they're calculated from transactions
+            # Account to deposit initial: money moves from account to deposit
+            # The balance calculation will handle this automatically when applied=True
             self.applied = True
             self.save(update_fields=['applied'])
             return
@@ -285,9 +286,16 @@ class Transaction(models.Model):
         return f"TXN-{date_str}-{unique_part}"
 
     def save(self, *args, **kwargs):
-        """Override save to generate transaction code for new transactions"""
+        """Override save to generate transaction code for new transactions and auto-apply done transactions"""
         if not self.transaction_code:
             self.transaction_code = self.generate_transaction_code()
+        
+        # Auto-apply transactions that are marked as done but not yet applied
+        if self.state == self.STATE_DONE and not self.applied:
+            super().save(*args, **kwargs)  # Save first to get the ID
+            self.apply()  # Then apply the transaction
+            return
+        
         super().save(*args, **kwargs)
 
     def get_receipt_display(self):
