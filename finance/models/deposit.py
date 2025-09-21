@@ -10,17 +10,7 @@ class Deposit(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='deposits', verbose_name=_('User'))
     initial_balance = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('Initial balance'))
     monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('Monthly profit rate'))
-    # Funding options
-    FUNDING_SOURCE_TRANSACTION = 'transaction'
-    FUNDING_SOURCE_NONE = 'none'
-    FUNDING_SOURCE_CHOICES = [
-        (FUNDING_SOURCE_TRANSACTION, _('Fund from Transaction')),
-        (FUNDING_SOURCE_NONE, _('No Initial Funding')),
-    ]
-    funding_source = models.CharField(max_length=20, choices=FUNDING_SOURCE_CHOICES, default=FUNDING_SOURCE_NONE, verbose_name=_('Funding source'))
-    # Account to fund from when funding_source is 'transaction'
-    funding_account = models.ForeignKey('Account', on_delete=models.SET_NULL, null=True, blank=True, related_name='funded_deposits', verbose_name=_('Funding account'))
-    # Profit goes to wallet (not compounded)
+    # Profit goes to base account (not compounded)
     last_profit_accrual_at = models.DateTimeField(null=True, blank=True, verbose_name=_('Last profit accrual'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created at'))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Updated at'))
@@ -48,30 +38,12 @@ class Deposit(models.Model):
         return self.initial_balance + incoming
 
     def save(self, *args, **kwargs):
-        is_new = not self.pk
-        
-        if is_new:
-            # Handle initial funding from transaction
-            if self.funding_source == self.FUNDING_SOURCE_TRANSACTION and self.initial_balance > 0:
-                # Set initial balance to funding amount
-                self.initial_balance = self.initial_balance
-        
+        # All deposits start with zero balance - no funding logic needed
         super().save(*args, **kwargs)
 
     def clean(self):
-        from django.core.exceptions import ValidationError
-        
-        # Validate funding based on funding source
-        if self.funding_source == self.FUNDING_SOURCE_TRANSACTION:
-            if not self.funding_account:
-                raise ValidationError('Funding account is required when funding source is "Fund from Transaction".')
-            if self.funding_account.user != self.user:
-                raise ValidationError('Funding account must belong to the same user.')
-            if self.funding_account.account_type != 'rial':
-                raise ValidationError('Funding account must be a rial account.')
-            if self.initial_balance and self.initial_balance > 0:
-                if self.funding_account.balance < self.initial_balance:
-                    raise ValidationError(f'Insufficient balance in funding account. Available: {self.funding_account.balance}, Required: {self.initial_balance}')
+        # No funding validation needed - all deposits start with zero balance
+        pass
 
     def accrue_monthly_profit(self):
         now = timezone.now()

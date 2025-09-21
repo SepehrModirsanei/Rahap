@@ -101,8 +101,7 @@ class AdminFormsTest(TestCase):
         form_data = {
             'user': self.regular_user.id,
             'initial_balance': '750000.00',
-            'monthly_profit_rate': '3.5',
-            'funding_source': Deposit.FUNDING_SOURCE_NONE
+            'monthly_profit_rate': '3.5'
         }
         
         response = self.client.post('/admin/finance/deposit/add/', form_data)
@@ -176,8 +175,7 @@ class AdminFormsTest(TestCase):
         form_data = {
             'user': self.regular_user.id,
             'initial_balance': '-100.00',  # Negative balance
-            'monthly_profit_rate': '2.5',
-            'funding_source': Deposit.FUNDING_SOURCE_NONE
+            'monthly_profit_rate': '2.5'
         }
         
         response = self.client.post('/admin/finance/deposit/add/', form_data)

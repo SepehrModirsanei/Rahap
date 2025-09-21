@@ -42,11 +42,9 @@ class DepositModelTest(TestCase):
         # Test deposit 1
         print(f"Deposit 1: {self.deposit1.initial_balance}")
         print(f"Profit rate: {self.deposit1.monthly_profit_rate}%")
-        print(f"Funding source: {self.deposit1.funding_source}")
         
         self.assertEqual(self.deposit1.initial_balance, Decimal('1000000.00'))
         self.assertEqual(self.deposit1.monthly_profit_rate, Decimal('3.0'))
-        self.assertEqual(self.deposit1.funding_source, Deposit.FUNDING_SOURCE_NONE)
         
         # Test deposit 2
         print(f"Deposit 2: {self.deposit2.initial_balance}")
@@ -112,29 +110,25 @@ class DepositModelTest(TestCase):
         
         print("✅ Deposit profit calculation working correctly!")
 
-    def test_deposit_funding_sources(self):
-        """Test different deposit funding sources"""
-        print("\n=== Testing Deposit Funding Sources ===")
+    def test_deposit_simplified_creation(self):
+        """Test simplified deposit creation without funding sources"""
+        print("\n=== Testing Simplified Deposit Creation ===")
         
-        # Test none funding source
-        self.assertEqual(self.deposit1.funding_source, Deposit.FUNDING_SOURCE_NONE)
-        print(f"Deposit 1 funding source: {self.deposit1.funding_source}")
+        # All deposits now start with zero balance
+        self.assertEqual(self.deposit1.initial_balance, Decimal('1000000.00'))
+        print(f"Deposit 1 initial balance: {self.deposit1.initial_balance}")
         
-        # Test transaction funding source
-        funded_deposit = Deposit.objects.create(
+        # Create a new deposit with zero balance
+        new_deposit = Deposit.objects.create(
             user=self.user,
-            initial_balance=Decimal('200000.00'),
-            monthly_profit_rate=Decimal('2.0'),
-            funding_source=Deposit.FUNDING_SOURCE_TRANSACTION,
-            funding_account=self.base_account
+            initial_balance=Decimal('0.00'),
+            monthly_profit_rate=Decimal('2.0')
         )
         
-        self.assertEqual(funded_deposit.funding_source, Deposit.FUNDING_SOURCE_TRANSACTION)
-        self.assertEqual(funded_deposit.funding_account, self.base_account)
-        print(f"Funded deposit source: {funded_deposit.funding_source}")
-        print(f"Funding account: {funded_deposit.funding_account}")
+        self.assertEqual(new_deposit.initial_balance, Decimal('0.00'))
+        print(f"New deposit initial balance: {new_deposit.initial_balance}")
         
-        print("✅ Deposit funding sources working correctly!")
+        print("✅ Simplified deposit creation working correctly!")
 
     def test_deposit_validation(self):
         """Test deposit validation"""

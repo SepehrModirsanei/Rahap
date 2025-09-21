@@ -7,12 +7,32 @@ from .transaction_state_log_admin import TransactionStateLogInline
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'get_persian_scheduled_for', 'get_persian_created_at')
+    list_display = ('id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'get_receipt_display', 'get_withdrawal_destination_display', 'get_persian_scheduled_for', 'get_persian_created_at')
     list_filter = ('kind', 'state')
     search_fields = ('user__username',)
     actions = ['apply_transactions']
     form = TransactionAdminForm
     inlines = [TransactionStateLogInline]
+    readonly_fields = ('get_receipt_display', 'get_withdrawal_destination_display')
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('user', 'kind', 'amount', 'state', 'scheduled_for')
+        }),
+        ('Account Information', {
+            'fields': ('source_account', 'destination_account', 'destination_deposit', 'exchange_rate'),
+            'description': 'Source and destination accounts for the transaction'
+        }),
+        ('Credit Increase Details', {
+            'fields': ('receipt', 'get_receipt_display'),
+            'description': 'Receipt for credit increase transactions',
+            'classes': ('collapse',)
+        }),
+        ('Withdrawal Details', {
+            'fields': ('withdrawal_card_number', 'withdrawal_sheba_number', 'get_withdrawal_destination_display'),
+            'description': 'Destination for withdrawal requests (either card or SHEBA)',
+            'classes': ('collapse',)
+        }),
+    )
 
     class Media:
         js = ('finance/transaction_admin.js',)

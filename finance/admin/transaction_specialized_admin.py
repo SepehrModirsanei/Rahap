@@ -67,7 +67,7 @@ class BaseTransactionAdmin(admin.ModelAdmin):
 class WithdrawalRequestAdmin(BaseTransactionAdmin):
     """Admin for withdrawal request transactions"""
     form = WithdrawalRequestForm
-    list_display = ('id', 'user', 'source_account', 'amount', 'state', 'applied', 'scheduled_for', 'created_at')
+    list_display = ('id', 'user', 'source_account', 'amount', 'state', 'applied', 'get_withdrawal_destination_display', 'scheduled_for', 'created_at')
     list_filter = ('state', 'applied', 'created_at')
     search_fields = ('user__username', 'user__user_id', 'source_account__name')
     actions = ['apply_transactions']
@@ -80,7 +80,7 @@ class WithdrawalRequestAdmin(BaseTransactionAdmin):
 class CreditIncreaseAdmin(BaseTransactionAdmin):
     """Admin for credit increase transactions"""
     form = CreditIncreaseForm
-    list_display = ('id', 'user', 'destination_account', 'amount', 'state', 'applied', 'scheduled_for', 'created_at')
+    list_display = ('id', 'user', 'destination_account', 'amount', 'state', 'applied', 'get_receipt_display', 'scheduled_for', 'created_at')
     list_filter = ('state', 'applied', 'created_at')
     search_fields = ('user__username', 'user__user_id', 'destination_account__name')
     actions = ['apply_transactions']

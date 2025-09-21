@@ -10,7 +10,7 @@ class AccountInline(admin.TabularInline):
     model = Account
     extra = 0
     readonly_fields = ('balance_display', 'get_persian_created_at', 'get_profit_calculation_info')
-    fields = ('name', 'account_type', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'funding_source', 'get_persian_created_at', 'get_profit_calculation_info')
+    fields = ('name', 'account_type', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'get_persian_created_at', 'get_profit_calculation_info')
     ordering = ('-created_at',)
     
     def balance_display(self, obj):
@@ -28,7 +28,7 @@ class DepositInline(admin.TabularInline):
     model = Deposit
     extra = 0
     readonly_fields = ('balance_display', 'get_persian_created_at', 'get_profit_calculation_info')
-    fields = ('initial_balance', 'balance_display', 'monthly_profit_rate', 'funding_source', 'funding_account', 'get_persian_created_at', 'get_profit_calculation_info')
+    fields = ('initial_balance', 'balance_display', 'monthly_profit_rate', 'get_persian_created_at', 'get_profit_calculation_info')
     ordering = ('-created_at',)
     
     def balance_display(self, obj):

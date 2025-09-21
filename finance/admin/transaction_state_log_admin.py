@@ -6,8 +6,42 @@ class TransactionStateLogInline(admin.TabularInline):
     model = TransactionStateLog
     extra = 0
     can_delete = False
-    readonly_fields = ('from_state', 'to_state', 'changed_by', 'changed_at', 'notes')
+    readonly_fields = ('get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'from_state', 'to_state', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at', 'notes')
     fields = readonly_fields
+
+    def get_transaction_code(self, obj):
+        """Display transaction code"""
+        if obj.transaction:
+            return obj.transaction.transaction_code
+        return '-'
+    get_transaction_code.short_description = 'کد تراکنش'
+
+    def get_transaction_kind_persian(self, obj):
+        """Display Persian transaction kind"""
+        if obj.transaction:
+            return obj.transaction.get_kind_display()
+        return '-'
+    get_transaction_kind_persian.short_description = 'نوع تراکنش'
+
+    def get_transaction_amount(self, obj):
+        """Display transaction amount"""
+        if obj.transaction:
+            return f"{obj.transaction.amount:,.2f}"
+        return '-'
+    get_transaction_amount.short_description = 'مبلغ'
+
+    def get_exchange_rate(self, obj):
+        """Display exchange rate"""
+        if obj.transaction:
+            if obj.transaction.kind == obj.transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
+                if obj.transaction.exchange_rate:
+                    return f"{obj.transaction.exchange_rate:,.6f}"
+                else:
+                    return "1.000000"  # Default for same currency
+            else:
+                return "-"  # Not applicable for other transaction types
+        return '-'
+    get_exchange_rate.short_description = 'نرخ تبدیل'
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -21,11 +55,61 @@ class TransactionStateLogInline(admin.TabularInline):
 
 @admin.register(TransactionStateLog)
 class TransactionStateLogAdmin(admin.ModelAdmin):
-    list_display = ('transaction', 'from_state', 'to_state', 'changed_by', 'changed_at')
-    list_filter = ('to_state', 'changed_at', 'changed_by')
-    search_fields = ('transaction__id', 'transaction__user__username', 'changed_by__username')
-    readonly_fields = ('transaction', 'from_state', 'to_state', 'changed_by', 'changed_at', 'notes')
+    list_display = ('transaction', 'get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'from_state', 'to_state', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at')
+    list_filter = ('to_state', 'changed_at', 'changed_by', 'transaction__kind')
+    search_fields = ('transaction__id', 'transaction__transaction_code', 'transaction__user__username', 'changed_by__username')
+    readonly_fields = ('transaction', 'get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'from_state', 'to_state', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at', 'notes')
     date_hierarchy = 'changed_at'
+
+    def get_persian_created_at(self, obj):
+        """Display Persian formatted creation date in list"""
+        return obj.get_persian_created_at()
+    get_persian_created_at.short_description = 'تاریخ ایجاد'
+    get_persian_created_at.admin_order_field = 'created_at'
+
+    def get_persian_changed_at(self, obj):
+        """Display Persian formatted change date in list"""
+        return obj.get_persian_changed_at()
+    get_persian_changed_at.short_description = 'تاریخ تغییر'
+    get_persian_changed_at.admin_order_field = 'changed_at'
+
+    def get_transaction_kind_persian(self, obj):
+        """Display Persian transaction kind in list"""
+        if obj.transaction:
+            return obj.transaction.get_kind_display()
+        return '-'
+    get_transaction_kind_persian.short_description = 'نوع تراکنش'
+    get_transaction_kind_persian.admin_order_field = 'transaction__kind'
+
+    def get_transaction_code(self, obj):
+        """Display transaction code in list"""
+        if obj.transaction:
+            return obj.transaction.transaction_code
+        return '-'
+    get_transaction_code.short_description = 'کد تراکنش'
+    get_transaction_code.admin_order_field = 'transaction__transaction_code'
+
+    def get_transaction_amount(self, obj):
+        """Display transaction amount in list"""
+        if obj.transaction:
+            return f"{obj.transaction.amount:,.2f}"
+        return '-'
+    get_transaction_amount.short_description = 'مبلغ'
+    get_transaction_amount.admin_order_field = 'transaction__amount'
+
+    def get_exchange_rate(self, obj):
+        """Display exchange rate in list"""
+        if obj.transaction:
+            if obj.transaction.kind == obj.transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
+                if obj.transaction.exchange_rate:
+                    return f"{obj.transaction.exchange_rate:,.6f}"
+                else:
+                    return "1.000000"  # Default for same currency
+            else:
+                return "-"  # Not applicable for other transaction types
+        return '-'
+    get_exchange_rate.short_description = 'نرخ تبدیل'
+    get_exchange_rate.admin_order_field = 'transaction__exchange_rate'
 
     def has_add_permission(self, request, obj=None):
         return False

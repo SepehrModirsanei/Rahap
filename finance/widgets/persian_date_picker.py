@@ -12,22 +12,19 @@ class PersianDatePickerWidget(forms.DateInput):
     class Media:
         css = {
             'all': (
-                'https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css',
+                'admin/css/persian-datepicker.min.css',
             )
         }
         js = (
-            'https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js',
+            'admin/js/jquery-3.6.0.min.js',
+            'admin/js/persian-date.min.js',
+            'admin/js/persian-datepicker.min.js',
         )
     
     def __init__(self, attrs=None):
         default_attrs = {
-            'class': 'persian-datepicker',
+            'class': 'vDateField',
             'data-date-format': 'YYYY/MM/DD',
-            'data-view-mode': 'day',
-            'data-min-view-mode': 'day',
-            'data-auto-close': 'true',
-            'data-position': 'bottom',
-            'data-language': 'fa',
             'data-view-mode': 'day',
             'data-min-view-mode': 'day',
             'data-auto-close': 'true',
@@ -45,21 +42,23 @@ class PersianDatePickerWidget(forms.DateInput):
         script = f"""
         <script>
         document.addEventListener('DOMContentLoaded', function() {{
-            var dateInput = document.querySelector('input[name="{name}"]');
-            if (dateInput) {{
-                $(dateInput).persianDatepicker({{
+            var input = document.querySelector('input[name="{name}"]');
+            if (input && typeof $ !== 'undefined') {{
+                $(input).persianDatepicker({{
                     format: 'YYYY/MM/DD',
-                    viewMode: 'day',
-                    minViewMode: 'day',
                     autoClose: true,
-                    position: 'bottom',
-                    language: 'fa',
+                    initialValue: false,
+                    persianDigit: true,
+                    altField: $(input),
+                    altFormat: 'YYYY-MM-DD',
                     calendar: {{
                         persian: {{
-                            locale: 'fa',
-                            showHint: true,
-                            leapYearMode: 'algorithmic'
+                            locale: 'fa'
                         }}
+                    }},
+                    onSelect: function(unix) {{
+                        var date = new persianDate(unix);
+                        $(this.altField).val(date.format('YYYY-MM-DD'));
                     }}
                 }});
             }}
@@ -76,16 +75,18 @@ class PersianDateTimePickerWidget(forms.DateTimeInput):
     class Media:
         css = {
             'all': (
-                'https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css',
+                'admin/css/persian-datepicker.min.css',
             )
         }
         js = (
-            'https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js',
+            'admin/js/jquery-3.6.0.min.js',
+            'admin/js/persian-date.min.js',
+            'admin/js/persian-datepicker.min.js',
         )
     
     def __init__(self, attrs=None):
         default_attrs = {
-            'class': 'persian-datetimepicker',
+            'class': 'vDateTimeInput',
             'data-date-format': 'YYYY/MM/DD HH:mm',
             'data-view-mode': 'day',
             'data-min-view-mode': 'day',
@@ -104,27 +105,29 @@ class PersianDateTimePickerWidget(forms.DateTimeInput):
         script = f"""
         <script>
         document.addEventListener('DOMContentLoaded', function() {{
-            var dateInput = document.querySelector('input[name="{name}"]');
-            if (dateInput) {{
-                $(dateInput).persianDatepicker({{
-                    format: 'YYYY/MM/DD HH:mm',
-                    viewMode: 'day',
-                    minViewMode: 'day',
+            var input = document.querySelector('input[name="{name}"]');
+            if (input && typeof $ !== 'undefined') {{
+                $(input).persianDatepicker({{
+                    format: 'YYYY/MM/DD HH:mm:ss',
                     autoClose: true,
-                    position: 'bottom',
-                    language: 'fa',
-                    timePicker: {{
-                        enabled: true,
-                        meridiem: {{
-                            enabled: true
-                        }}
-                    }},
+                    initialValue: false,
+                    persianDigit: true,
+                    altField: $(input),
+                    altFormat: 'YYYY-MM-DD HH:mm:ss',
                     calendar: {{
                         persian: {{
-                            locale: 'fa',
-                            showHint: true,
-                            leapYearMode: 'algorithmic'
+                            locale: 'fa'
                         }}
+                    }},
+                    timePicker: {{
+                        enabled: true,
+                        meridian: {{
+                            enabled: false
+                        }}
+                    }},
+                    onSelect: function(unix) {{
+                        var date = new persianDate(unix);
+                        $(this.altField).val(date.format('YYYY-MM-DD HH:mm:ss'));
                     }}
                 }});
             }}

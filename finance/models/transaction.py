@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
+import uuid
 from ..utils import get_persian_date_display
 
 
@@ -25,6 +26,8 @@ class Transaction(models.Model):
     ]
 
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='transactions', verbose_name=_('User'))
+    # Unique transaction code for easy identification
+    transaction_code = models.CharField(max_length=20, unique=True, editable=False, null=True, blank=True, verbose_name=_('Transaction Code'))
     source_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='outgoing_account_transactions', verbose_name=_('Source account'))
     destination_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_account_transactions', verbose_name=_('Destination account'))
     destination_deposit = models.ForeignKey('Deposit', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_deposit_transactions', verbose_name=_('Destination deposit'))
@@ -50,6 +53,13 @@ class Transaction(models.Model):
     ]
     state = models.CharField(max_length=40, choices=STATE_CHOICES, default=STATE_WAITING_TREASURY, verbose_name=_('State'))
     
+    # Receipt for credit increase transactions
+    receipt = models.ImageField(upload_to='receipts/', null=True, blank=True, verbose_name=_('Receipt'), help_text=_('Upload receipt image (JPG format) for credit increase transactions'))
+    
+    # Withdrawal destination information
+    withdrawal_card_number = models.CharField(max_length=16, blank=True, verbose_name=_('شماره کارت'), help_text=_('16-digit card number for withdrawal'))
+    withdrawal_sheba_number = models.CharField(max_length=24, blank=True, verbose_name=_('شماره شبا'), help_text=_('24-digit SHEBA number for withdrawal'))
+    
     class Meta:
         verbose_name = _('Transaction')
         verbose_name_plural = _('Transactions')
@@ -69,6 +79,19 @@ class Transaction(models.Model):
             # Withdrawal request must work with rial accounts only
             if self.source_account.account_type != 'rial':
                 raise ValidationError('Withdrawal request can only be applied to rial accounts.')
+            # Validate withdrawal destination
+            if not self.withdrawal_card_number and not self.withdrawal_sheba_number:
+                raise ValidationError('Withdrawal request requires either card number or SHEBA number.')
+            if self.withdrawal_card_number and self.withdrawal_sheba_number:
+                raise ValidationError('Withdrawal request can have either card number or SHEBA number, not both.')
+            # Validate card number format
+            if self.withdrawal_card_number:
+                if not self.withdrawal_card_number.isdigit() or len(self.withdrawal_card_number) != 16:
+                    raise ValidationError('Card number must be 16 digits.')
+            # Validate SHEBA number format
+            if self.withdrawal_sheba_number:
+                if not self.withdrawal_sheba_number.startswith('IR') or len(self.withdrawal_sheba_number) != 24:
+                    raise ValidationError('SHEBA number must start with IR and be 24 characters long.')
             return
         if self.kind == self.KIND_ACCOUNT_TO_DEPOSIT_INITIAL:
             if not (self.source_account and self.destination_deposit):
@@ -253,6 +276,42 @@ class Transaction(models.Model):
         """Return Persian date for scheduled_for"""
         return get_persian_date_display(self.scheduled_for)
     get_persian_scheduled_for.short_description = 'تاریخ برنامه‌ریزی'
+
+    def generate_transaction_code(self):
+        """Generate a unique transaction code"""
+        # Format: TXN-YYYYMMDD-XXXXXX (e.g., TXN-20250921-A1B2C3)
+        date_str = timezone.now().strftime('%Y%m%d')
+        unique_part = str(uuid.uuid4())[:6].upper()
+        return f"TXN-{date_str}-{unique_part}"
+
+    def save(self, *args, **kwargs):
+        """Override save to generate transaction code for new transactions"""
+        if not self.transaction_code:
+            self.transaction_code = self.generate_transaction_code()
+        super().save(*args, **kwargs)
+
+    def get_receipt_display(self):
+        """Display receipt image in admin"""
+        if self.receipt:
+            from django.utils.html import format_html
+            return format_html(
+                '<a href="{}" target="_blank"><img src="{}" style="max-width: 100px; max-height: 100px;" /></a>',
+                self.receipt.url,
+                self.receipt.url
+            )
+        return "-"
+    get_receipt_display.short_description = 'Receipt'
+    get_receipt_display.admin_order_field = 'receipt'
+
+    def get_withdrawal_destination_display(self):
+        """Display withdrawal destination (card or SHEBA) in admin"""
+        if self.withdrawal_card_number:
+            return f"Card: {self.withdrawal_card_number}"
+        elif self.withdrawal_sheba_number:
+            return f"SHEBA: {self.withdrawal_sheba_number}"
+        return "-"
+    get_withdrawal_destination_display.short_description = 'Withdrawal Destination'
+    get_withdrawal_destination_display.admin_order_field = 'withdrawal_card_number'
 
     def __str__(self):
         return f"Txn({self.kind}) {self.amount} by {self.user.username}"

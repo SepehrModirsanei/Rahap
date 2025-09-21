@@ -26,8 +26,8 @@ class AccountTxnInInline(ReadOnlyTransactionInline):
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'name', 'account_type', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'funding_source', 'initial_funding_amount', 'get_persian_created_at', 'get_profit_calculation_info')
-    list_filter = ('account_type', 'funding_source', ProfitCalculationFilter)
+    list_display = ('id', 'user', 'name', 'account_type', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'get_persian_created_at', 'get_profit_calculation_info')
+    list_filter = ('account_type', ProfitCalculationFilter)
     search_fields = ('user__username', 'name')
     actions = ['accrue_profit_now', 'snapshot_today']
     inlines = [AccountTxnOutInline, AccountTxnInInline]
@@ -37,11 +37,7 @@ class AccountAdmin(admin.ModelAdmin):
         }),
         ('Initial Balance', {
             'fields': ('initial_balance',),
-            'description': 'Initial balance is the starting amount for this account'
-        }),
-        ('Initial Funding', {
-            'fields': ('funding_source', 'initial_funding_amount'),
-            'description': 'Choose how to fund this account initially'
+            'description': 'Initial balance is the starting amount for this account. All accounts start with zero balance.'
         }),
     )
 

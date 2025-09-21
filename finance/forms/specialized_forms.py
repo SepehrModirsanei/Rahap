@@ -7,7 +7,7 @@ class WithdrawalRequestForm(forms.ModelForm):
     """Form specifically for withdrawal request transactions"""
     class Meta:
         model = Transaction
-        fields = ('user', 'source_account', 'amount', 'state', 'scheduled_for')
+        fields = ('user', 'source_account', 'amount', 'state', 'scheduled_for', 'withdrawal_card_number', 'withdrawal_sheba_number')
         widgets = {
             'scheduled_for': PersianDateTimePickerWidget(),
         }
@@ -50,7 +50,7 @@ class CreditIncreaseForm(forms.ModelForm):
     """Form specifically for credit increase transactions"""
     class Meta:
         model = Transaction
-        fields = ('user', 'destination_account', 'amount', 'state', 'scheduled_for')
+        fields = ('user', 'destination_account', 'amount', 'state', 'scheduled_for', 'receipt')
         widgets = {
             'scheduled_for': PersianDateTimePickerWidget(),
         }

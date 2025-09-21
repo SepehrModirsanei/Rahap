@@ -22,18 +22,15 @@ class DepositTxnInInline(ReadOnlyTransactionInline):
 @admin.register(Deposit)
 class DepositAdmin(admin.ModelAdmin):
     form = DepositAdminForm
-    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'funding_source', 'funding_account', 'get_persian_created_at', 'get_profit_calculation_info')
-    list_filter = ('funding_source', ProfitCalculationFilter)
+    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'get_persian_created_at', 'get_profit_calculation_info')
+    list_filter = (ProfitCalculationFilter,)
     search_fields = ('user__username',)
     actions = ['accrue_profit_now']
     inlines = [DepositTxnInInline]
     fieldsets = (
         ('Basic Information', {
-            'fields': ('user', 'initial_balance', 'monthly_profit_rate')
-        }),
-        ('Funding', {
-            'fields': ('funding_source', 'funding_account'),
-            'description': 'Choose how to fund this deposit initially. If "Fund from Transaction" is selected, choose a rial account to fund from.'
+            'fields': ('user', 'initial_balance', 'monthly_profit_rate'),
+            'description': 'All deposits start with zero balance. Use transactions to add money to deposits.'
         }),
     )
 

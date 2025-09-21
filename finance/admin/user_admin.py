@@ -6,9 +6,9 @@ from .user_inlines import AccountInline, DepositInline, TransactionInline
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
-    list_display = ('short_user_id_display', 'username', 'email', 'is_staff', 'is_superuser', 'is_active', 'get_persian_date_joined')
+    list_display = ('short_user_id_display', 'username', 'first_name', 'last_name', 'national_id', 'phone_number', 'is_staff', 'is_superuser', 'is_active', 'get_persian_date_joined')
     list_display_links = ('short_user_id_display',)  # Make short user_id clickable
-    search_fields = ('user_id', 'username', 'email')
+    search_fields = ('user_id', 'username', 'email', 'first_name', 'last_name', 'national_id', 'phone_number', 'card_number', 'sheba_number')
     readonly_fields = ('user_id', 'date_joined', 'last_login')
     ordering = ('-date_joined',)  # Show newest users first
     
@@ -18,7 +18,8 @@ class UserAdmin(DjangoUserAdmin):
     # Reorganize fieldsets to show user_id prominently
     fieldsets = (
         (None, {'fields': ('user_id', 'username', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
+        ('اطلاعات شخصی', {'fields': ('first_name', 'last_name', 'email', 'national_id', 'birth_date', 'phone_number')}),
+        ('اطلاعات بانکی', {'fields': ('card_number', 'sheba_number')}),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser'),
         }),
@@ -30,6 +31,14 @@ class UserAdmin(DjangoUserAdmin):
         (None, {
             'classes': ('wide',),
             'fields': ('username', 'password1', 'password2'),
+        }),
+        ('اطلاعات شخصی', {
+            'classes': ('wide',),
+            'fields': ('first_name', 'last_name', 'email', 'national_id', 'birth_date', 'phone_number'),
+        }),
+        ('اطلاعات بانکی', {
+            'classes': ('wide',),
+            'fields': ('card_number', 'sheba_number'),
         }),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser'),

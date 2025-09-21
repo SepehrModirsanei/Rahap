@@ -93,7 +93,8 @@ class TransactionCurrentTests(TestCase):
             source_account=self.rial_account,
             amount=Decimal('100.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
-            state=Transaction.STATE_DONE
+            state=Transaction.STATE_DONE,
+            withdrawal_card_number='1234567890123456'
         )
         
         # Should not raise ValidationError
@@ -163,7 +164,8 @@ class TransactionCurrentTests(TestCase):
             source_account=self.rial_account,
             amount=Decimal('300.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
-            state=Transaction.STATE_DONE
+            state=Transaction.STATE_DONE,
+            withdrawal_card_number='1234567890123456'
         )
         txn.apply()
         
@@ -215,7 +217,8 @@ class TransactionCurrentTests(TestCase):
             source_account=self.rial_account,
             amount=Decimal('150.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
-            state=Transaction.STATE_DONE
+            state=Transaction.STATE_DONE,
+            withdrawal_card_number='1234567890123456'
         )
         txn1.apply()
         
@@ -224,7 +227,8 @@ class TransactionCurrentTests(TestCase):
             source_account=self.rial_account,
             amount=Decimal('250.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
-            state=Transaction.STATE_DONE
+            state=Transaction.STATE_DONE,
+            withdrawal_sheba_number='IR1234567890123456789012'
         )
         txn2.apply()
         
@@ -261,7 +265,8 @@ class TransactionCurrentTests(TestCase):
             source_account=self.rial_account,
             amount=Decimal('400.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
-            state=Transaction.STATE_DONE
+            state=Transaction.STATE_DONE,
+            withdrawal_card_number='1234567890123456'
         )
         withdrawal_txn.apply()
         

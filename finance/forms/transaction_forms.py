@@ -10,7 +10,8 @@ class TransactionAdminForm(forms.ModelForm):
         fields = (
             'user', 'kind', 'amount', 'exchange_rate',
             'source_account', 'destination_account',
-            'destination_deposit', 'state', 'scheduled_for'
+            'destination_deposit', 'state', 'scheduled_for',
+            'receipt', 'withdrawal_card_number', 'withdrawal_sheba_number'
         )
         widgets = {
             'scheduled_for': PersianDateTimePickerWidget(),
