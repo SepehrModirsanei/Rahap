@@ -23,7 +23,7 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from finance import admin_supervisor as supervisor_admin
+from finance.admin.supervisor import register_supervisor_admin
 
 
 class SupervisorAdminSite(AdminSite):
@@ -33,7 +33,7 @@ class SupervisorAdminSite(AdminSite):
 
 
 supervisor_site = SupervisorAdminSite(name='supervisor_admin')
-supervisor_admin.register(supervisor_site)
+register_supervisor_admin(supervisor_site)
 
 # Swagger configuration
 schema_view = get_schema_view(

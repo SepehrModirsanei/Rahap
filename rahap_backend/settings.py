@@ -107,13 +107,24 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+LANGUAGE_CODE = 'fa'
+TIME_ZONE = 'Asia/Tehran'
 USE_I18N = True
-
 USE_TZ = True
+
+# Supported languages
+LANGUAGES = [
+    ('fa', 'فارسی'),
+    ('en', 'English'),
+]
+
+# Locale paths
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
+
+# Force admin interface to use Persian
+ADMIN_LANGUAGE_CODE = 'fa'
 
 
 # Static files (CSS, JavaScript, Images)
@@ -168,25 +179,3 @@ SWAGGER_SETTINGS = {
 REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
-LANGUAGE_CODE = 'fa'
-TIME_ZONE = 'Asia/Tehran'
-USE_I18N = True
-USE_TZ = True
-
-# Supported languages
-LANGUAGES = [
-    ('fa', 'فارسی'),
-    ('en', 'English'),
-]
-
-# Locale paths
-LOCALE_PATHS = [
-    BASE_DIR / 'locale',
-]
-
-# Force admin interface to use Persian
-ADMIN_LANGUAGE_CODE = 'fa'

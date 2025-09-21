@@ -6,6 +6,6 @@ class AdminPersianMiddleware(MiddlewareMixin):
     """Force admin interface to use Persian locale"""
     
     def process_request(self, request):
-        if request.path.startswith('/admin/'):
+        if request.path.startswith('/admin/') or request.path.startswith('/api/admin/'):
             activate('fa')
         return None
