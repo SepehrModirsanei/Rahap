@@ -23,8 +23,8 @@ class User(AbstractUser):
     sheba_number = models.CharField(max_length=24, blank=True, verbose_name=_('شماره شبا'), help_text=_('24-digit IBAN number'))
     
     class Meta:
-        verbose_name = _('User')
-        verbose_name_plural = _('Users')
+        verbose_name = _('کاربر')
+        verbose_name_plural = _('کاربران')
     
     def __str__(self):
         return f"User {str(self.user_id)[:8]}"

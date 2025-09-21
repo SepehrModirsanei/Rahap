@@ -17,48 +17,48 @@ class Transaction(models.Model):
     KIND_PROFIT_DEPOSIT_TO_ACCOUNT = 'profit_deposit_account'
 
     KIND_CHOICES = [
-        (KIND_CREDIT_INCREASE, _('Credit increase')),
-        (KIND_WITHDRAWAL_REQUEST, _('Withdrawal request')),
-        (KIND_TRANSFER_ACCOUNT_TO_ACCOUNT, _('Account to account transfer')),
-        (KIND_ACCOUNT_TO_DEPOSIT_INITIAL, _('Account to deposit initial')),
-        (KIND_PROFIT_ACCOUNT, _('Profit to account')),
-        (KIND_PROFIT_DEPOSIT_TO_ACCOUNT, _('Profit deposit to account')),
+        (KIND_CREDIT_INCREASE, _('افزایش اعتبار')),
+        (KIND_WITHDRAWAL_REQUEST, _('درخواست برداشت')),
+        (KIND_TRANSFER_ACCOUNT_TO_ACCOUNT, _('انتقال حساب به حساب')),
+        (KIND_ACCOUNT_TO_DEPOSIT_INITIAL, _('حساب به سپرده اولیه')),
+        (KIND_PROFIT_ACCOUNT, _('سود به حساب')),
+        (KIND_PROFIT_DEPOSIT_TO_ACCOUNT, _('سود سپرده به حساب')),
     ]
 
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='transactions', verbose_name=_('User'))
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='transactions', verbose_name=_('کاربر'))
     # Unique transaction code for easy identification
-    transaction_code = models.CharField(max_length=20, unique=True, editable=False, null=True, blank=True, verbose_name=_('Transaction Code'))
-    source_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='outgoing_account_transactions', verbose_name=_('Source account'))
-    destination_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_account_transactions', verbose_name=_('Destination account'))
-    destination_deposit = models.ForeignKey('Deposit', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_deposit_transactions', verbose_name=_('Destination deposit'))
-    amount = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('Amount'))
-    kind = models.CharField(max_length=40, choices=KIND_CHOICES, verbose_name=_('Kind'))
+    transaction_code = models.CharField(max_length=20, unique=True, editable=False, null=True, blank=True, verbose_name=_('کد تراکنش'))
+    source_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='outgoing_account_transactions', verbose_name=_('حساب مبدا'))
+    destination_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_account_transactions', verbose_name=_('حساب مقصد'))
+    destination_deposit = models.ForeignKey('Deposit', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_deposit_transactions', verbose_name=_('سپرده مقصد'))
+    amount = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('مبلغ'))
+    kind = models.CharField(max_length=40, choices=KIND_CHOICES, verbose_name=_('نوع'))
     # Exchange rate to convert between different currency accounts
     # For cross-currency transfers: destination_amount = source_amount * exchange_rate
-    exchange_rate = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('Exchange rate'))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created at'))
-    applied = models.BooleanField(default=False, verbose_name=_('Applied'))
-    issued_at = models.DateTimeField(default=timezone.now, verbose_name=_('Issued at'))
-    scheduled_for = models.DateTimeField(null=True, blank=True, verbose_name=_('Scheduled for'))
+    exchange_rate = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('نرخ تبدیل'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاریخ ایجاد'))
+    applied = models.BooleanField(default=False, verbose_name=_('اعمال شده'))
+    issued_at = models.DateTimeField(default=timezone.now, verbose_name=_('تاریخ صدور'))
+    scheduled_for = models.DateTimeField(null=True, blank=True, verbose_name=_('زمان‌بندی شده برای'))
     # Workflow state
     STATE_WAITING_TREASURY = 'waiting_treasury'
     STATE_WAITING_SANDOGH = 'waiting_sandogh'
     STATE_VERIFIED_KHAZANEDAR = 'verified_khazanedar'
     STATE_DONE = 'done'
     STATE_CHOICES = [
-        (STATE_WAITING_TREASURY, _('Waiting treasury')),
-        (STATE_WAITING_SANDOGH, _('Waiting sandogh')),
-        (STATE_VERIFIED_KHAZANEDAR, _('Verified khazanedar')),
-        (STATE_DONE, _('Done')),
+        (STATE_WAITING_TREASURY, _('در انتظار خزانه‌داری')),
+        (STATE_WAITING_SANDOGH, _('در انتظار صندوق')),
+        (STATE_VERIFIED_KHAZANEDAR, _('تایید شده توسط خزانه‌دار')),
+        (STATE_DONE, _('انجام شده')),
     ]
-    state = models.CharField(max_length=40, choices=STATE_CHOICES, default=STATE_WAITING_TREASURY, verbose_name=_('State'))
+    state = models.CharField(max_length=40, choices=STATE_CHOICES, default=STATE_WAITING_TREASURY, verbose_name=_('وضعیت'))
     
     # Receipt for credit increase transactions
-    receipt = models.ImageField(upload_to='receipts/', null=True, blank=True, verbose_name=_('Receipt'), help_text=_('Upload receipt image (JPG format) for credit increase transactions'))
+    receipt = models.ImageField(upload_to='receipts/', null=True, blank=True, verbose_name=_('رسید'), help_text=_('آپلود تصویر رسید (فرمت JPG) برای تراکنش‌های افزایش اعتبار'))
     
     # Withdrawal destination information
-    withdrawal_card_number = models.CharField(max_length=16, blank=True, verbose_name=_('شماره کارت'), help_text=_('16-digit card number for withdrawal'))
-    withdrawal_sheba_number = models.CharField(max_length=24, blank=True, verbose_name=_('شماره شبا'), help_text=_('24-digit SHEBA number for withdrawal'))
+    withdrawal_card_number = models.CharField(max_length=16, blank=True, verbose_name=_('شماره کارت'), help_text=_('شماره کارت 16 رقمی برای برداشت'))
+    withdrawal_sheba_number = models.CharField(max_length=24, blank=True, verbose_name=_('شماره شبا'), help_text=_('شماره شبا 24 رقمی برای برداشت'))
     
     class Meta:
         verbose_name = _('تراکنش')

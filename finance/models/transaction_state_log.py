@@ -15,8 +15,8 @@ class TransactionStateLog(models.Model):
 
     class Meta:
         ordering = ['-changed_at']
-        verbose_name = 'Transaction State Log'
-        verbose_name_plural = 'Transaction State Logs'
+        verbose_name = 'گزارش وضعیت تراکنش'
+        verbose_name_plural = 'گزارش‌های وضعیت تراکنش'
 
     def get_persian_created_at(self):
         """Return Persian formatted creation date"""

@@ -7,17 +7,17 @@ from ..utils import get_persian_date_display
 
 
 class Deposit(models.Model):
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='deposits', verbose_name=_('User'))
-    initial_balance = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('Initial balance'))
-    monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('Monthly profit rate'))
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='deposits', verbose_name=_('کاربر'))
+    initial_balance = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('موجودی اولیه'))
+    monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('نرخ سود ماهانه'))
     # Profit goes to base account (not compounded)
-    last_profit_accrual_at = models.DateTimeField(null=True, blank=True, verbose_name=_('Last profit accrual'))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created at'))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Updated at'))
+    last_profit_accrual_at = models.DateTimeField(null=True, blank=True, verbose_name=_('آخرین تعلق سود'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاریخ ایجاد'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاریخ بروزرسانی'))
     
     class Meta:
-        verbose_name = _('Deposit')
-        verbose_name_plural = _('Deposits')
+        verbose_name = _('سپرده')
+        verbose_name_plural = _('سپرده‌ها')
 
     @property
     def amount(self):

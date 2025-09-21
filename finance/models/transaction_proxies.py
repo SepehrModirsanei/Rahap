@@ -7,37 +7,37 @@ class WithdrawalRequest(Transaction):
     """Proxy model for withdrawal request transactions"""
     class Meta:
         proxy = True
-        verbose_name = _('Withdrawal request')
-        verbose_name_plural = _('Withdrawal requests')
+        verbose_name = _('درخواست برداشت')
+        verbose_name_plural = _('درخواست‌های برداشت')
 
 
 class CreditIncrease(Transaction):
     """Proxy model for credit increase transactions"""
     class Meta:
         proxy = True
-        verbose_name = _('Credit increase')
-        verbose_name_plural = _('Credit increases')
+        verbose_name = _('افزایش اعتبار')
+        verbose_name_plural = _('افزایش‌های اعتبار')
 
 
 class AccountTransfer(Transaction):
     """Proxy model for account-to-account transfer transactions"""
     class Meta:
         proxy = True
-        verbose_name = _('Account transfer')
-        verbose_name_plural = _('Account transfers')
+        verbose_name = _('انتقال حساب')
+        verbose_name_plural = _('انتقال‌های حساب')
 
 
 class ProfitTransaction(Transaction):
     """Proxy model for profit-related transactions"""
     class Meta:
         proxy = True
-        verbose_name = _('Profit transaction')
-        verbose_name_plural = _('Profit transactions')
+        verbose_name = _('تراکنش سود')
+        verbose_name_plural = _('تراکنش‌های سود')
 
 
 class DepositTransaction(Transaction):
     """Proxy model for account-to-deposit transactions"""
     class Meta:
         proxy = True
-        verbose_name = _('Deposit transaction')
-        verbose_name_plural = _('Deposit transactions')
+        verbose_name = _('تراکنش سپرده')
+        verbose_name_plural = _('تراکنش‌های سپرده')

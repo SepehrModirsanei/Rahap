@@ -135,7 +135,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Additional static files directories
 STATICFILES_DIRS = [
-    BASE_DIR / 'finance' / 'static',
+    BASE_DIR / 'static',
 ]
 
 # Media files (user uploads)

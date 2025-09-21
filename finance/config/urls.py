@@ -60,15 +60,15 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # Default Django Admin
-    path('admin/', admin.site.urls),
-    
-    # Custom Admin Sites
+    # Custom Admin Sites (must come before default admin to avoid catch-all pattern)
     path('admin/treasury/', treasury_admin_site.urls),
     path('admin/operations/', operation_admin_site.urls),
     path('admin/financial-overview/', readonly_admin_site_1.urls),
     path('admin/analytics/', readonly_admin_site_2.urls),
     path('admin/supervisor/', supervisor_site.urls),
+    
+    # Default Django Admin (must come last due to catch-all pattern)
+    path('admin/', admin.site.urls),
     
     # API Endpoints
     path('api/', include(router.urls)),

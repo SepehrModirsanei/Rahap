@@ -12,24 +12,24 @@ class Account(models.Model):
     ACCOUNT_TYPE_GOLD = 'gold'
     ACCOUNT_TYPE_FOREIGN = 'foreign currency'
     ACCOUNT_TYPE_CHOICES = [
-        (ACCOUNT_TYPE_RIAL, _('Rial account')),
-        (ACCOUNT_TYPE_GOLD, _('Gold account')),
-        (ACCOUNT_TYPE_FOREIGN, _('Foreign Currency account')),
+        (ACCOUNT_TYPE_RIAL, _('حساب ریالی')),
+        (ACCOUNT_TYPE_GOLD, _('حساب طلا')),
+        (ACCOUNT_TYPE_FOREIGN, _('حساب ارزی')),
     ]
 
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='accounts', verbose_name=_('User'))
-    name = models.CharField(max_length=100, verbose_name=_('Account name'))
-    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES, verbose_name=_('Account type'))
-    initial_balance = models.DecimalField(max_digits=18, decimal_places=6, default=0, verbose_name=_('Initial balance'))
-    monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('Monthly profit rate'))
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='accounts', verbose_name=_('کاربر'))
+    name = models.CharField(max_length=100, verbose_name=_('نام حساب'))
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES, verbose_name=_('نوع حساب'))
+    initial_balance = models.DecimalField(max_digits=18, decimal_places=6, default=0, verbose_name=_('موجودی اولیه'))
+    monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('نرخ سود ماهانه'))
     # e.g., 2.5 => 2.5% monthly
-    last_profit_accrual_at = models.DateTimeField(null=True, blank=True, verbose_name=_('Last profit accrual'))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created at'))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Updated at'))
+    last_profit_accrual_at = models.DateTimeField(null=True, blank=True, verbose_name=_('آخرین تعلق سود'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاریخ ایجاد'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاریخ بروزرسانی'))
     
     class Meta:
-        verbose_name = _('Account')
-        verbose_name_plural = _('Accounts')
+        verbose_name = _('حساب')
+        verbose_name_plural = _('حساب‌ها')
 
     @property
     def balance(self):
