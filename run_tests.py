@@ -18,23 +18,53 @@ def run_command(command):
     except Exception as e:
         return 1, "", str(e)
 
-def run_tests(test_path, verbose=False):
+def run_tests(test_path, verbose=False, coverage=False):
     """Run tests for a specific path"""
-    cmd = f"python3 manage.py test {test_path}"
-    if verbose:
-        cmd += " -v 2"
-    
-    print(f"Running: {cmd}")
-    print("=" * 60)
-    
-    returncode, stdout, stderr = run_command(cmd)
-    
-    if returncode == 0:
-        print("✅ Tests passed!")
+    if coverage:
+        # Use coverage to run tests
+        cmd = f"coverage run --source=finance manage.py test {test_path}"
+        if verbose:
+            cmd += " -v 2"
+        
+        print(f"Running with coverage: {cmd}")
+        print("=" * 60)
+        
+        returncode, stdout, stderr = run_command(cmd)
+        
+        if returncode == 0:
+            print("✅ Tests passed!")
+            # Generate coverage report
+            print("\n📊 Generating coverage report...")
+            coverage_returncode, coverage_stdout, coverage_stderr = run_command("coverage report")
+            if coverage_returncode == 0:
+                print("📈 Coverage Report:")
+                print(coverage_stdout)
+            
+            # Generate HTML report
+            html_returncode, html_stdout, html_stderr = run_command("coverage html")
+            if html_returncode == 0:
+                print("🌐 HTML coverage report generated: htmlcov/index.html")
+        else:
+            print("❌ Tests failed!")
+            if stderr:
+                print(f"Error: {stderr}")
     else:
-        print("❌ Tests failed!")
-        if stderr:
-            print(f"Error: {stderr}")
+        # Regular test run
+        cmd = f"python3 manage.py test {test_path}"
+        if verbose:
+            cmd += " -v 2"
+        
+        print(f"Running: {cmd}")
+        print("=" * 60)
+        
+        returncode, stdout, stderr = run_command(cmd)
+        
+        if returncode == 0:
+            print("✅ Tests passed!")
+        else:
+            print("❌ Tests failed!")
+            if stderr:
+                print(f"Error: {stderr}")
     
     if stdout:
         print(stdout)
@@ -47,6 +77,7 @@ def main():
         'all', 'profit', 'transactions', 'admin', 'models', 'quick'
     ], default='quick', help='Test category to run')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
+    parser.add_argument('--coverage', action='store_true', help='Run with code coverage analysis')
     parser.add_argument('--list', action='store_true', help='List available test categories')
     
     args = parser.parse_args()
@@ -79,7 +110,7 @@ def main():
     print(f"Test path: {test_path}")
     print()
     
-    success = run_tests(test_path, args.verbose)
+    success = run_tests(test_path, args.verbose, args.coverage)
     
     if success:
         print("\n🎉 All tests completed successfully!")

@@ -23,3 +23,7 @@ media/
 
 # Logs
 *.log
+# Coverage and test artifacts
+.coverage
+htmlcov/
+coverage.xml
