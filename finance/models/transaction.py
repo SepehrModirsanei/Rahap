@@ -61,8 +61,8 @@ class Transaction(models.Model):
     withdrawal_sheba_number = models.CharField(max_length=24, blank=True, verbose_name=_('شماره شبا'), help_text=_('24-digit SHEBA number for withdrawal'))
     
     class Meta:
-        verbose_name = _('Transaction')
-        verbose_name_plural = _('Transactions')
+        verbose_name = _('تراکنش')
+        verbose_name_plural = _('تراکنش‌ها')
 
     def clean(self):
         # Basic validation that at least one source and one destination is set appropriately

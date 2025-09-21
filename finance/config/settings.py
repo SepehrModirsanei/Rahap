@@ -54,7 +54,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'rahap_backend.urls'
+ROOT_URLCONF = 'finance.config.urls'
 
 TEMPLATES = [
     {
@@ -71,7 +71,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'rahap_backend.wsgi.application'
+WSGI_APPLICATION = 'finance.config.wsgi.application'
 
 
 # Database
