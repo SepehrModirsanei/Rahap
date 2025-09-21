@@ -93,12 +93,16 @@ class AccountAdmin(admin.ModelAdmin):
             return "سود ماهانه ندارد"
         
         if obj.last_profit_accrual_at:
-            # Next profit date is 28 days after last accrual
-            next_date = obj.last_profit_accrual_at + timezone.timedelta(days=28)
+            # Next profit date is 30 days after last accrual
+            next_date = obj.last_profit_accrual_at + timezone.timedelta(days=30)
+            return get_persian_date_display(next_date)
+        elif obj.created_at:
+            # If no profit has been accrued yet, next date is 30 days after account creation
+            next_date = obj.created_at + timezone.timedelta(days=30)
             return get_persian_date_display(next_date)
         else:
-            # If no profit has been accrued yet, next date is 28 days after account creation
-            next_date = obj.created_at + timezone.timedelta(days=28)
+            # If no creation date available, use current time
+            next_date = timezone.now() + timezone.timedelta(days=30)
             return get_persian_date_display(next_date)
     get_next_profit_date.short_description = 'تاریخ سود بعدی'
     get_next_profit_date.admin_order_field = 'last_profit_accrual_at'

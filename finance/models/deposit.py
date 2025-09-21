@@ -47,7 +47,7 @@ class Deposit(models.Model):
 
     def accrue_monthly_profit(self):
         now = timezone.now()
-        if self.monthly_profit_rate and (not self.last_profit_accrual_at or (now - self.last_profit_accrual_at).days >= 28):
+        if self.monthly_profit_rate and (not self.last_profit_accrual_at or (now - self.last_profit_accrual_at).days >= 30):
             # Calculate profit based on current deposit amount (not just initial balance)
             profit = (self.initial_balance * self.monthly_profit_rate) / 100
             if profit <= 0:

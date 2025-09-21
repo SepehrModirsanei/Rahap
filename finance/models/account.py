@@ -110,6 +110,9 @@ class Account(models.Model):
         now = timezone.now()
         if not self.monthly_profit_rate:
             return
+        # Check if enough time has passed since last profit accrual (30 days)
+        if self.last_profit_accrual_at and (now - self.last_profit_accrual_at).days < 30:
+            return
         # Compute profit based on daily snapshots over last 30 days ending yesterday
         period_end = date.today()
         period_start = period_end - timedelta(days=30)
