@@ -101,7 +101,7 @@ class ReadOnlyTransactionAdmin(admin.ModelAdmin):
 
 @admin.register(AccountDailyBalance)
 class ReadOnlyAccountDailyBalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'account', 'snapshot_date', 'balance')
+    list_display = ('id', 'account', 'get_persian_snapshot_date', 'balance')
     list_filter = ('snapshot_date', 'account__account_type')
     search_fields = ('account__user__username', 'account__name')
     readonly_fields = ('account', 'snapshot_date', 'balance')
@@ -118,7 +118,7 @@ class ReadOnlyAccountDailyBalanceAdmin(admin.ModelAdmin):
 
 @admin.register(DepositDailyBalance)
 class ReadOnlyDepositDailyBalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'deposit', 'snapshot_date', 'balance')
+    list_display = ('id', 'deposit', 'get_persian_snapshot_date', 'balance')
     list_filter = ('snapshot_date',)
     search_fields = ('deposit__user__username',)
     readonly_fields = ('deposit', 'snapshot_date', 'balance')

@@ -175,7 +175,7 @@ class BaseTransactionAdmin(admin.ModelAdmin):
 
 class BaseAccountDailyBalanceAdmin(admin.ModelAdmin):
     """Base admin class for AccountDailyBalance model"""
-    list_display = ('account', 'snapshot_date', 'balance_display')
+    list_display = ('account', 'get_persian_snapshot_date', 'balance_display')
     list_filter = ('snapshot_date',)
     search_fields = ('account__name', 'account__user__username')
     readonly_fields = ('balance_display',)

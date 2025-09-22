@@ -164,7 +164,7 @@ class AnalyticsAccountDailyBalanceAdmin(admin.ModelAdmin):
 
 
 class AnalyticsDepositDailyBalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'deposit', 'snapshot_date', 'balance')
+    list_display = ('id', 'deposit', 'get_persian_snapshot_date', 'balance')
     list_filter = ('snapshot_date',)
     search_fields = ('deposit__user__username',)
     readonly_fields = ('deposit', 'snapshot_date', 'balance')

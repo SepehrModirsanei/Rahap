@@ -11,8 +11,13 @@ _scheduler_started = False
 def _create_daily_snapshots():
     """Create daily snapshots for all accounts and deposits."""
     from .models import Account, AccountDailyBalance, Deposit, DepositDailyBalance
+    import pytz
     
-    today = timezone.now().date()
+    # Get current time in Iran timezone
+    iran_tz = pytz.timezone('Asia/Tehran')
+    now_iran = timezone.now().astimezone(iran_tz)
+    today = now_iran.date()
+    
     created_accounts = 0
     created_deposits = 0
     
@@ -97,8 +102,12 @@ def _scheduler_loop():
     
     while True:
         try:
-            # Create daily snapshots at midnight
-            today = timezone.now().date()
+            # Create daily snapshots at midnight Iran time
+            import pytz
+            iran_tz = pytz.timezone('Asia/Tehran')
+            now_iran = timezone.now().astimezone(iran_tz)
+            today = now_iran.date()
+            
             if last_snapshot_date != today:
                 _create_daily_snapshots()
                 last_snapshot_date = today

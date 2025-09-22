@@ -1,15 +1,19 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from decimal import Decimal
+import pytz
 
 from finance.models import Account, AccountDailyBalance, Deposit, DepositDailyBalance
 
 
 class Command(BaseCommand):
-    help = 'Snapshot all accounts and deposits balances for today (00:00 snapshot)'
+    help = 'Snapshot all accounts and deposits balances for today (00:00 Iran time snapshot)'
 
     def handle(self, *args, **options):
-        today = timezone.now().date()
+        # Get current date in Iran timezone
+        iran_tz = pytz.timezone('Asia/Tehran')
+        now_iran = timezone.now().astimezone(iran_tz)
+        today = now_iran.date()
         created_accounts = 0
         created_deposits = 0
         

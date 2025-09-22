@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from ..utils import get_persian_date_display
 
 
 class DepositDailyBalance(models.Model):
@@ -12,6 +13,11 @@ class DepositDailyBalance(models.Model):
         verbose_name_plural = _('موجودی‌های روزانه سپرده')
         unique_together = ('deposit', 'snapshot_date')
         ordering = ['-snapshot_date']
+
+    def get_persian_snapshot_date(self):
+        """Return Persian date for snapshot_date"""
+        return get_persian_date_display(self.snapshot_date)
+    get_persian_snapshot_date.short_description = 'تاریخ'
 
     def __str__(self):
         return f"DepositDailyBalance({self.deposit_id} {self.snapshot_date} {self.balance})"
