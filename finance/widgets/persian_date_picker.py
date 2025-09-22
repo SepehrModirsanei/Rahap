@@ -57,7 +57,7 @@ class PersianDatePickerWidget(forms.DateInput):
                         }}
                     }},
                     onSelect: function(unix) {{
-                        var date = new persianDate(unix);
+                        var date = new persianDate(unix).toCalendar('gregorian');
                         $(this.altField).val(date.format('YYYY-MM-DD'));
                     }}
                 }});
@@ -126,7 +126,7 @@ class PersianDateTimePickerWidget(forms.DateTimeInput):
                         }}
                     }},
                     onSelect: function(unix) {{
-                        var date = new persianDate(unix);
+                        var date = new persianDate(unix).toCalendar('gregorian');
                         $(this.altField).val(date.format('YYYY-MM-DD HH:mm:ss'));
                     }}
                 }});
