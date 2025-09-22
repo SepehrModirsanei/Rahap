@@ -44,11 +44,13 @@ class Transaction(models.Model):
     STATE_WAITING_TREASURY = 'waiting_treasury'
     STATE_WAITING_SANDOGH = 'waiting_sandogh'
     STATE_VERIFIED_KHAZANEDAR = 'verified_khazanedar'
+    STATE_WAITING_TIME = 'waiting_time'
     STATE_DONE = 'done'
     STATE_CHOICES = [
         (STATE_WAITING_TREASURY, _('در انتظار خزانه‌داری')),
         (STATE_WAITING_SANDOGH, _('در انتظار صندوق')),
         (STATE_VERIFIED_KHAZANEDAR, _('تایید شده توسط خزانه‌دار')),
+        (STATE_WAITING_TIME, _('در انتظار زمان تنظیم شده')),
         (STATE_DONE, _('انجام شده')),
     ]
     state = models.CharField(max_length=40, choices=STATE_CHOICES, default=STATE_WAITING_TREASURY, verbose_name=_('وضعیت'))

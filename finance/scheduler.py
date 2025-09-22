@@ -43,6 +43,23 @@ def _accrue_due_profits_once():
         except Exception:
             pass
 
+    # Auto-apply scheduled transactions whose time has arrived
+    from .models import Transaction
+    now = timezone.now()
+    due_txns = Transaction.objects.filter(
+        state=Transaction.STATE_WAITING_TIME,
+        applied=False,
+        scheduled_for__isnull=False,
+        scheduled_for__lte=now,
+    )[:200]
+    for txn in due_txns:
+        try:
+            txn.state = Transaction.STATE_DONE
+            txn.save(update_fields=['state'])
+            txn.apply()
+        except Exception:
+            pass
+
 
 def _scheduler_loop():
     # Run periodic scan every 60 seconds

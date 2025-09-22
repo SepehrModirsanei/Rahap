@@ -5,6 +5,11 @@ from ..widgets.persian_date_picker import PersianDateTimePickerWidget
 
 
 class TransactionAdminForm(forms.ModelForm):
+    scheduled_for = forms.DateTimeField(
+        required=False,
+        widget=PersianDateTimePickerWidget(),
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+    )
     class Meta:
         model = Transaction
         fields = (
@@ -14,9 +19,7 @@ class TransactionAdminForm(forms.ModelForm):
             'receipt', 'withdrawal_card_number', 'withdrawal_sheba_number',
             'admin_opinion', 'treasurer_opinion', 'finance_manager_opinion'
         )
-        widgets = {
-            'scheduled_for': PersianDateTimePickerWidget(),
-        }
+        widgets = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

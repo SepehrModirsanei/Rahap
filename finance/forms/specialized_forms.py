@@ -5,12 +5,15 @@ from ..widgets.persian_date_picker import PersianDatePickerWidget, PersianDateTi
 
 class WithdrawalRequestForm(forms.ModelForm):
     """Form specifically for withdrawal request transactions"""
+    scheduled_for = forms.DateTimeField(
+        required=False,
+        widget=PersianDateTimePickerWidget(),
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+    )
     class Meta:
         model = Transaction
         fields = ('user', 'source_account', 'amount', 'state', 'scheduled_for', 'withdrawal_card_number', 'withdrawal_sheba_number', 'receipt')
-        widgets = {
-            'scheduled_for': PersianDateTimePickerWidget(),
-        }
+        widgets = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,12 +53,15 @@ class WithdrawalRequestForm(forms.ModelForm):
 
 class CreditIncreaseForm(forms.ModelForm):
     """Form specifically for credit increase transactions"""
+    scheduled_for = forms.DateTimeField(
+        required=False,
+        widget=PersianDateTimePickerWidget(),
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+    )
     class Meta:
         model = Transaction
         fields = ('user', 'destination_account', 'amount', 'state', 'scheduled_for', 'receipt')
-        widgets = {
-            'scheduled_for': PersianDateTimePickerWidget(),
-        }
+        widgets = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -94,12 +100,15 @@ class CreditIncreaseForm(forms.ModelForm):
 
 class AccountTransferForm(forms.ModelForm):
     """Form specifically for account-to-account transfer transactions"""
+    scheduled_for = forms.DateTimeField(
+        required=False,
+        widget=PersianDateTimePickerWidget(),
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+    )
     class Meta:
         model = Transaction
         fields = ('user', 'source_account', 'destination_account', 'amount', 'exchange_rate', 'state', 'scheduled_for')
-        widgets = {
-            'scheduled_for': PersianDateTimePickerWidget(),
-        }
+        widgets = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -148,12 +157,15 @@ class AccountTransferForm(forms.ModelForm):
 
 class ProfitTransactionForm(forms.ModelForm):
     """Form specifically for profit-related transactions"""
+    scheduled_for = forms.DateTimeField(
+        required=False,
+        widget=PersianDateTimePickerWidget(),
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+    )
     class Meta:
         model = Transaction
         fields = ('user', 'destination_account', 'amount', 'state', 'scheduled_for')
-        widgets = {
-            'scheduled_for': PersianDateTimePickerWidget(),
-        }
+        widgets = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -188,12 +200,15 @@ class ProfitTransactionForm(forms.ModelForm):
 
 class DepositTransactionForm(forms.ModelForm):
     """Form specifically for account-to-deposit transactions"""
+    scheduled_for = forms.DateTimeField(
+        required=False,
+        widget=PersianDateTimePickerWidget(),
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+    )
     class Meta:
         model = Transaction
         fields = ('user', 'source_account', 'destination_deposit', 'amount', 'state', 'scheduled_for')
-        widgets = {
-            'scheduled_for': PersianDateTimePickerWidget(),
-        }
+        widgets = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
