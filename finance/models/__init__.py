@@ -3,6 +3,7 @@ from .account import Account
 from .deposit import Deposit
 from .transaction import Transaction
 from .account_daily_balance import AccountDailyBalance
+from .deposit_daily_balance import DepositDailyBalance
 from .transaction_state_log import TransactionStateLog
 from .transaction_proxies import (
     WithdrawalRequest, CreditIncrease, AccountTransfer,
@@ -15,6 +16,7 @@ __all__ = [
     'Deposit',
     'Transaction',
     'AccountDailyBalance',
+    'DepositDailyBalance',
     'TransactionStateLog',
     'WithdrawalRequest',
     'CreditIncrease',

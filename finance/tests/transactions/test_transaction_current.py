@@ -60,30 +60,26 @@ class TransactionCurrentTests(TestCase):
 
     def test_credit_increase_foreign_account_fails(self):
         """Test that credit increase fails with foreign accounts"""
-        txn = Transaction.objects.create(
-            user=self.user,
-            destination_account=self.foreign_account,
-            amount=Decimal('100.00'),
-            kind=Transaction.KIND_CREDIT_INCREASE,
-            state=Transaction.STATE_DONE
-        )
-        
         with self.assertRaises(ValidationError) as cm:
-            txn.clean()
+            Transaction.objects.create(
+                user=self.user,
+                destination_account=self.foreign_account,
+                amount=Decimal('100.00'),
+                kind=Transaction.KIND_CREDIT_INCREASE,
+                state=Transaction.STATE_DONE
+            )
         self.assertIn('Credit increase can only be applied to rial accounts', str(cm.exception))
 
     def test_credit_increase_gold_account_fails(self):
         """Test that credit increase fails with gold accounts"""
-        txn = Transaction.objects.create(
-            user=self.user,
-            destination_account=self.gold_account,
-            amount=Decimal('100.00'),
-            kind=Transaction.KIND_CREDIT_INCREASE,
-            state=Transaction.STATE_DONE
-        )
-        
         with self.assertRaises(ValidationError) as cm:
-            txn.clean()
+            Transaction.objects.create(
+                user=self.user,
+                destination_account=self.gold_account,
+                amount=Decimal('100.00'),
+                kind=Transaction.KIND_CREDIT_INCREASE,
+                state=Transaction.STATE_DONE
+            )
         self.assertIn('Credit increase can only be applied to rial accounts', str(cm.exception))
 
     def test_withdrawal_request_rial_account_success(self):
@@ -104,30 +100,26 @@ class TransactionCurrentTests(TestCase):
 
     def test_withdrawal_request_foreign_account_fails(self):
         """Test that withdrawal request fails with foreign accounts"""
-        txn = Transaction.objects.create(
-            user=self.user,
-            source_account=self.foreign_account,
-            amount=Decimal('100.00'),
-            kind=Transaction.KIND_WITHDRAWAL_REQUEST,
-            state=Transaction.STATE_DONE
-        )
-        
         with self.assertRaises(ValidationError) as cm:
-            txn.clean()
+            Transaction.objects.create(
+                user=self.user,
+                source_account=self.foreign_account,
+                amount=Decimal('100.00'),
+                kind=Transaction.KIND_WITHDRAWAL_REQUEST,
+                state=Transaction.STATE_DONE
+            )
         self.assertIn('Withdrawal request can only be applied to rial accounts', str(cm.exception))
 
     def test_withdrawal_request_gold_account_fails(self):
         """Test that withdrawal request fails with gold accounts"""
-        txn = Transaction.objects.create(
-            user=self.user,
-            source_account=self.gold_account,
-            amount=Decimal('100.00'),
-            kind=Transaction.KIND_WITHDRAWAL_REQUEST,
-            state=Transaction.STATE_DONE
-        )
-        
         with self.assertRaises(ValidationError) as cm:
-            txn.clean()
+            Transaction.objects.create(
+                user=self.user,
+                source_account=self.gold_account,
+                amount=Decimal('100.00'),
+                kind=Transaction.KIND_WITHDRAWAL_REQUEST,
+                state=Transaction.STATE_DONE
+            )
         self.assertIn('Withdrawal request can only be applied to rial accounts', str(cm.exception))
 
     # ==================== BALANCE CHANGE TESTS ====================
