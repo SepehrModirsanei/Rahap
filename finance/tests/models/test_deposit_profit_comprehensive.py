@@ -144,13 +144,13 @@ class DepositProfitComprehensiveTests(FinanceTestCase):
         # Accrue profit
         self.deposit.accrue_monthly_profit()
         
-        # Check that no profit transaction was created
+        # New behavior: system auto-creates a Rial base account and credits profit
         profit_transactions = Transaction.objects.filter(
             user=self.user,
             kind=Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT,
             applied=True
         )
-        self.assertEqual(profit_transactions.count(), 0)
+        self.assertEqual(profit_transactions.count(), 1)
 
     def test_accrue_monthly_profit_different_rates(self):
         """Test profit accrual with different profit rates"""
