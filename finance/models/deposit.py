@@ -100,16 +100,11 @@ class Deposit(models.Model):
     
     def get_profit_calculation_info(self):
         """Return profit calculation start date and average balance"""
-        if self.last_profit_accrual_at:
-            # For deposits, the profit calculation starts when the deposit is created
-            # and is based on the initial_balance (which gets updated with profits)
-            profit_start_date = self.created_at
-            
-            # The average balance for deposits is the initial_balance
-            # (which includes accumulated profits)
-            return f"شروع: {get_persian_date_display(profit_start_date)} - میانگین: ${self.initial_balance:,.2f}"
-        else:
-            return "شروع نشده"
+        # For deposits, the profit calculation tracking starts at creation time
+        # (even before the first accrual happens). Average is the current
+        # initial_balance (which may include accumulated profits over time).
+        profit_start_date = self.created_at
+        return f"شروع: {get_persian_date_display(profit_start_date)} - میانگین: ${self.initial_balance:,.2f}"
     get_profit_calculation_info.short_description = 'اطلاعات سود'
 
     def __str__(self):
