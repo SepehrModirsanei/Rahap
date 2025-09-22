@@ -53,11 +53,19 @@ class Deposit(models.Model):
             if profit <= 0:
                 return
                 
-            # Find user's base account (حساب پایه) to credit profit
+            # Find user's base account (حساب پایه) to credit profit.
+            # Fallbacks: any rial account; otherwise create one.
             base_account = self.user.accounts.filter(account_type='rial', name='حساب پایه').first()
             if not base_account:
-                # This should not happen as User model creates a default base account
-                return
+                base_account = self.user.accounts.filter(account_type='rial').first()
+            if not base_account:
+                from .account import Account
+                base_account = Account.objects.create(
+                    user=self.user,
+                    name='حساب پایه',
+                    account_type=Account.ACCOUNT_TYPE_RIAL,
+                    initial_balance=Decimal('0.00')
+                )
             
             # Create and apply profit transaction
             from .transaction import Transaction
