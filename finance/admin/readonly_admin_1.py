@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ..models import User, Account, Deposit, Transaction, AccountDailyBalance
+from ..models import User, Account, Deposit, Transaction, AccountDailyBalance, DepositDailyBalance
 
 
 class ReadOnlyTransactionInline(admin.TabularInline):
@@ -99,11 +99,29 @@ class ReadOnlyTransactionAdmin(admin.ModelAdmin):
         return False
 
 
+@admin.register(AccountDailyBalance)
 class ReadOnlyAccountDailyBalanceAdmin(admin.ModelAdmin):
     list_display = ('id', 'account', 'snapshot_date', 'balance')
     list_filter = ('snapshot_date', 'account__account_type')
     search_fields = ('account__user__username', 'account__name')
     readonly_fields = ('account', 'snapshot_date', 'balance')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(DepositDailyBalance)
+class ReadOnlyDepositDailyBalanceAdmin(admin.ModelAdmin):
+    list_display = ('id', 'deposit', 'snapshot_date', 'balance')
+    list_filter = ('snapshot_date',)
+    search_fields = ('deposit__user__username',)
+    readonly_fields = ('deposit', 'snapshot_date', 'balance')
 
     def has_add_permission(self, request, obj=None):
         return False

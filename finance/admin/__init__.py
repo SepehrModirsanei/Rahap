@@ -20,6 +20,10 @@ from .transaction_specialized_admin import (
     WithdrawalRequestAdmin, CreditIncreaseAdmin, AccountTransferAdmin,
     ProfitTransactionAdmin, DepositTransactionAdmin
 )
+from .readonly_admin_1 import (
+    ReadOnlyAccountDailyBalanceAdmin,
+    ReadOnlyDepositDailyBalanceAdmin,
+)
 from .user_inlines import AccountInline, DepositInline, TransactionInline
 
 # Import admin sites
@@ -60,6 +64,8 @@ __all__ = [
     'AccountTransferAdmin',
     'ProfitTransactionAdmin',
     'DepositTransactionAdmin',
+    'ReadOnlyAccountDailyBalanceAdmin',
+    'ReadOnlyDepositDailyBalanceAdmin',
     'AccountInline',
     'DepositInline',
     'TransactionInline',

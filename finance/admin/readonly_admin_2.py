@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ..models import User, Account, Deposit, Transaction, AccountDailyBalance
+from ..models import User, Account, Deposit, Transaction, AccountDailyBalance, DepositDailyBalance
 
 
 class ReadOnlyTransactionInline(admin.TabularInline):
@@ -161,3 +161,19 @@ class AnalyticsAccountDailyBalanceAdmin(admin.ModelAdmin):
     def export_balance_data(self, request, queryset):
         self.message_user(request, f"Exporting data for {queryset.count()} balance records")
     export_balance_data.short_description = 'Export balance data'
+
+
+class AnalyticsDepositDailyBalanceAdmin(admin.ModelAdmin):
+    list_display = ('id', 'deposit', 'snapshot_date', 'balance')
+    list_filter = ('snapshot_date',)
+    search_fields = ('deposit__user__username',)
+    readonly_fields = ('deposit', 'snapshot_date', 'balance')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
