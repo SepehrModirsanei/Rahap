@@ -106,12 +106,18 @@ class Deposit(models.Model):
         profit_start_date = self.created_at
         
         # Calculate next profit date
-        if self.last_profit_accrual_at:
-            next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=30)
-        else:
-            next_profit_date = self.created_at + timezone.timedelta(days=30)
+        next_profit_date = None
+        try:
+            if self.last_profit_accrual_at:
+                next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=30)
+            elif self.created_at:
+                next_profit_date = self.created_at + timezone.timedelta(days=30)
+        except Exception:
+            next_profit_date = None
         
-        return f"شروع: {get_persian_date_display(profit_start_date)} - میانگین: ${self.initial_balance:,.2f} - سود بعدی: {get_persian_date_display(next_profit_date)}"
+        start_str = get_persian_date_display(profit_start_date) if profit_start_date else '-'
+        next_str = get_persian_date_display(next_profit_date) if next_profit_date else '-'
+        return f"شروع: {start_str} - میانگین: ${self.initial_balance:,.2f} - سود بعدی: {next_str}"
     get_profit_calculation_info.short_description = 'اطلاعات سود'
 
     def __str__(self):

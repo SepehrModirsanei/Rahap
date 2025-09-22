@@ -6,6 +6,7 @@ which contains transaction and specialized forms.
 """
 
 from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 from finance.forms.transaction_forms import TransactionAdminForm
@@ -143,7 +144,8 @@ class WithdrawalRequestFormTests(FinanceTestCase):
             'state': Transaction.STATE_DONE,
             'withdrawal_card_number': '1234567890123456'
         }
-        form = WithdrawalRequestForm(data=form_data)
+        dummy_image = SimpleUploadedFile('receipt.jpg', b"filecontent", content_type='image/jpeg')
+        form = WithdrawalRequestForm(data=form_data, files={'receipt': dummy_image})
         self.assertTrue(form.is_valid())
 
     def test_form_account_filtering(self):
@@ -166,7 +168,8 @@ class WithdrawalRequestFormTests(FinanceTestCase):
             'state': Transaction.STATE_DONE,
             'withdrawal_card_number': '1234567890123456'
         }
-        form = WithdrawalRequestForm(data=form_data)
+        dummy_image = SimpleUploadedFile('receipt.jpg', b"filecontent", content_type='image/jpeg')
+        form = WithdrawalRequestForm(data=form_data, files={'receipt': dummy_image})
         self.assertTrue(form.is_valid())
         
         transaction = form.save()
