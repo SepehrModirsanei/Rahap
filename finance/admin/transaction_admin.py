@@ -32,6 +32,10 @@ class TransactionAdmin(admin.ModelAdmin):
             'description': 'Destination for withdrawal requests (either card or SHEBA)',
             'classes': ('collapse',)
         }),
+        ('Opinions', {
+            'fields': ('admin_opinion', 'treasurer_opinion', 'finance_manager_opinion'),
+            'description': 'ثبت نظرات: نظر ادمین، نظر خزانه‌دار، نظر مدیر مالی',
+        }),
     )
 
     class Media:

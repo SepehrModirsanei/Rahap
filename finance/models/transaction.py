@@ -59,6 +59,10 @@ class Transaction(models.Model):
     # Withdrawal destination information
     withdrawal_card_number = models.CharField(max_length=16, blank=True, verbose_name=_('شماره کارت'), help_text=_('شماره کارت 16 رقمی برای برداشت'))
     withdrawal_sheba_number = models.CharField(max_length=24, blank=True, verbose_name=_('شماره شبا'), help_text=_('شماره شبا 24 رقمی برای برداشت'))
+    # Admin opinions
+    admin_opinion = models.TextField(blank=True, verbose_name=_('نظر ادمین'))
+    treasurer_opinion = models.TextField(blank=True, verbose_name=_('نظر خزانه‌دار'))
+    finance_manager_opinion = models.TextField(blank=True, verbose_name=_('نظر مدیر مالی'))
     
     class Meta:
         verbose_name = _('تراکنش')
