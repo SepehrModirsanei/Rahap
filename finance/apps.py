@@ -8,3 +8,10 @@ class FinanceConfig(AppConfig):
     def ready(self):
         from . import signals  # noqa
         from .signals import transaction_signals  # noqa
+        # Start background profit scheduler
+        try:
+            from .scheduler import start_profit_scheduler
+            start_profit_scheduler()
+        except Exception:
+            # Avoid breaking startup if scheduler fails
+            pass
