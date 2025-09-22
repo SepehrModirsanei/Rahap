@@ -8,7 +8,8 @@ class TransactionAdminForm(forms.ModelForm):
     scheduled_for = forms.DateTimeField(
         required=False,
         widget=PersianDateTimePickerWidget(),
-        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+        # Accept only ISO Gregorian; the widget converts Jalali -> ISO before submit
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
     )
     class Meta:
         model = Transaction

@@ -8,7 +8,7 @@ class WithdrawalRequestForm(forms.ModelForm):
     scheduled_for = forms.DateTimeField(
         required=False,
         widget=PersianDateTimePickerWidget(),
-        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
     )
     class Meta:
         model = Transaction
@@ -56,7 +56,7 @@ class CreditIncreaseForm(forms.ModelForm):
     scheduled_for = forms.DateTimeField(
         required=False,
         widget=PersianDateTimePickerWidget(),
-        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
     )
     class Meta:
         model = Transaction
@@ -103,7 +103,7 @@ class AccountTransferForm(forms.ModelForm):
     scheduled_for = forms.DateTimeField(
         required=False,
         widget=PersianDateTimePickerWidget(),
-        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
     )
     class Meta:
         model = Transaction
@@ -160,7 +160,7 @@ class ProfitTransactionForm(forms.ModelForm):
     scheduled_for = forms.DateTimeField(
         required=False,
         widget=PersianDateTimePickerWidget(),
-        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
     )
     class Meta:
         model = Transaction
@@ -203,7 +203,7 @@ class DepositTransactionForm(forms.ModelForm):
     scheduled_for = forms.DateTimeField(
         required=False,
         widget=PersianDateTimePickerWidget(),
-        input_formats=['%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M']
+        input_formats=['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
     )
     class Meta:
         model = Transaction
