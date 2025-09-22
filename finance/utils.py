@@ -22,6 +22,11 @@ def to_persian_date(date_obj, format_str='%Y/%m/%d'):
         return '-'
     
     if isinstance(date_obj, datetime):
+        # Convert to local time (Asia/Tehran) if tz-aware
+        try:
+            date_obj = timezone.localtime(date_obj)
+        except Exception:
+            pass
         # Convert to JalaliDateTime
         jalali_date = JalaliDateTime(date_obj)
         return jalali_date.strftime(format_str)
@@ -45,6 +50,10 @@ def to_persian_datetime(datetime_obj, format_str='%Y/%m/%d %H:%M'):
     if not datetime_obj:
         return '-'
     
+    try:
+        datetime_obj = timezone.localtime(datetime_obj)
+    except Exception:
+        pass
     jalali_datetime = JalaliDateTime(datetime_obj)
     return jalali_datetime.strftime(format_str)
 
@@ -64,6 +73,10 @@ def get_persian_date_display(date_obj):
     
     try:
         if isinstance(date_obj, datetime):
+            try:
+                date_obj = timezone.localtime(date_obj)
+            except Exception:
+                pass
             jalali = JalaliDateTime(date_obj)
             return jalali.strftime('%Y/%m/%d %H:%M')
         else:
@@ -88,6 +101,10 @@ def get_persian_date_short(date_obj):
     
     try:
         if isinstance(date_obj, datetime):
+            try:
+                date_obj = timezone.localtime(date_obj)
+            except Exception:
+                pass
             jalali = JalaliDateTime(date_obj)
             return jalali.strftime('%Y/%m/%d')
         else:
@@ -111,6 +128,10 @@ def get_persian_time(date_obj):
         return '-'
     
     try:
+        try:
+            date_obj = timezone.localtime(date_obj)
+        except Exception:
+            pass
         jalali = JalaliDateTime(date_obj)
         return jalali.strftime('%H:%M')
     except:
