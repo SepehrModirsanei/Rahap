@@ -67,7 +67,7 @@ class BaseTransactionAdmin(admin.ModelAdmin):
 class WithdrawalRequestAdmin(BaseTransactionAdmin):
     """Admin for withdrawal request transactions"""
     form = WithdrawalRequestForm
-    list_display = ('id', 'user', 'source_account', 'amount', 'state', 'applied', 'get_withdrawal_destination_display', 'get_persian_scheduled_for', 'get_persian_created_at')
+    list_display = ('id', 'user', 'source_account', 'amount', 'state', 'applied', 'get_withdrawal_destination_display', 'get_receipt_display', 'get_persian_scheduled_for', 'get_persian_created_at')
     list_filter = ('state', 'applied', 'issued_at')
     search_fields = ('user__username', 'user__user_id', 'source_account__name')
     actions = ['apply_transactions']

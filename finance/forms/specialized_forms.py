@@ -7,7 +7,7 @@ class WithdrawalRequestForm(forms.ModelForm):
     """Form specifically for withdrawal request transactions"""
     class Meta:
         model = Transaction
-        fields = ('user', 'source_account', 'amount', 'state', 'scheduled_for', 'withdrawal_card_number', 'withdrawal_sheba_number')
+        fields = ('user', 'source_account', 'amount', 'state', 'scheduled_for', 'withdrawal_card_number', 'withdrawal_sheba_number', 'receipt')
         widgets = {
             'scheduled_for': PersianDateTimePickerWidget(),
         }
@@ -20,6 +20,8 @@ class WithdrawalRequestForm(forms.ModelForm):
         # Make source_account required
         self.fields['source_account'].required = True
         self.fields['state'].required = True
+        # Require receipt image for withdrawals
+        self.fields['receipt'].required = True
         
         # Filter to only rial accounts for the selected user
         self._filter_account_choices()
