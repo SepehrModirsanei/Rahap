@@ -99,12 +99,19 @@ class Deposit(models.Model):
     get_persian_last_profit_accrual.short_description = 'آخرین سود'
     
     def get_profit_calculation_info(self):
-        """Return profit calculation start date and average balance"""
+        """Return profit calculation start date, average balance, and next profit date"""
         # For deposits, the profit calculation tracking starts at creation time
         # (even before the first accrual happens). Average is the current
         # initial_balance (which may include accumulated profits over time).
         profit_start_date = self.created_at
-        return f"شروع: {get_persian_date_display(profit_start_date)} - میانگین: ${self.initial_balance:,.2f}"
+        
+        # Calculate next profit date
+        if self.last_profit_accrual_at:
+            next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=30)
+        else:
+            next_profit_date = self.created_at + timezone.timedelta(days=30)
+        
+        return f"شروع: {get_persian_date_display(profit_start_date)} - میانگین: ${self.initial_balance:,.2f} - سود بعدی: {get_persian_date_display(next_profit_date)}"
     get_profit_calculation_info.short_description = 'اطلاعات سود'
 
     def __str__(self):
