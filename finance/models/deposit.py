@@ -47,41 +47,77 @@ class Deposit(models.Model):
 
     def accrue_monthly_profit(self):
         now = timezone.now()
-        if self.monthly_profit_rate and (not self.last_profit_accrual_at or (now - self.last_profit_accrual_at).days >= 30):
-            # Calculate profit based on current deposit amount (not just initial balance)
-            profit = (self.initial_balance * self.monthly_profit_rate) / 100
-            if profit <= 0:
-                return
-                
-            # Find user's base account (حساب پایه) to credit profit.
-            # Fallbacks: any rial account; otherwise create one.
-            base_account = self.user.accounts.filter(account_type='rial', name='حساب پایه').first()
-            if not base_account:
-                base_account = self.user.accounts.filter(account_type='rial').first()
-            if not base_account:
-                from .account import Account
-                base_account = Account.objects.create(
-                    user=self.user,
-                    name='حساب پایه',
-                    account_type=Account.ACCOUNT_TYPE_RIAL,
-                    initial_balance=Decimal('0.00')
-                )
+        if not self.monthly_profit_rate:
+            return
+        # Check if enough time has passed since last profit accrual (30 days)
+        if self.last_profit_accrual_at and (now - self.last_profit_accrual_at).days < 30:
+            return
+        
+        # Compute profit based on daily snapshots over last 30 days ending yesterday
+        from datetime import date, timedelta
+        period_end = date.today()
+        period_start = period_end - timedelta(days=30)
+        snapshots = list(self.daily_balances.filter(snapshot_date__gt=period_start).order_by('snapshot_date'))
+        # Get carry snapshot on or before start
+        carry = self.daily_balances.filter(snapshot_date__lte=period_start).order_by('-snapshot_date').first()
+        segments = []
+        # Build segments between dates with constant balance
+        prev_date = period_start
+        prev_balance = Decimal(carry.balance) if carry else Decimal(self.initial_balance)
+        for snap in snapshots:
+            d = snap.snapshot_date
+            if d > prev_date:
+                segments.append((prev_date, d, prev_balance))
+            prev_date = d
+            prev_balance = Decimal(snap.balance)
+        # Last segment until period_end
+        if prev_date < period_end:
+            segments.append((prev_date, period_end, prev_balance))
+        # Sum daily balances
+        total_days = Decimal(0)
+        weighted_sum = Decimal(0)
+        for start, end, bal in segments:
+            days = Decimal((end - start).days)
+            if days > 0:
+                total_days += days
+                weighted_sum += (bal * days)
+        if total_days == 0:
+            return
+        # Monthly profit = rate% * (sum of daily balances / 30)
+        average_balance = weighted_sum / Decimal(30)
+        profit = (average_balance * Decimal(self.monthly_profit_rate)) / Decimal(100)
+        if profit <= 0:
+            return
             
-            # Create and apply profit transaction
-            from .transaction import Transaction
-            profit_transaction = Transaction.objects.create(
+        # Find user's base account (حساب پایه) to credit profit.
+        # Fallbacks: any rial account; otherwise create one.
+        base_account = self.user.accounts.filter(account_type='rial', name='حساب پایه').first()
+        if not base_account:
+            base_account = self.user.accounts.filter(account_type='rial').first()
+        if not base_account:
+            from .account import Account
+            base_account = Account.objects.create(
                 user=self.user,
-                source_account=None,
-                destination_account=base_account,
-                amount=profit,
-                kind=Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT,
-                state=Transaction.STATE_DONE
+                name='حساب پایه',
+                account_type=Account.ACCOUNT_TYPE_RIAL,
+                initial_balance=Decimal('0.00')
             )
-            profit_transaction.apply()
-            
-            # Update only the timestamp (profit goes to user's base account, not back to deposit)
-            self.last_profit_accrual_at = now
-            self.save(update_fields=['last_profit_accrual_at', 'updated_at'])
+        
+        # Create and apply profit transaction
+        from .transaction import Transaction
+        profit_transaction = Transaction.objects.create(
+            user=self.user,
+            source_account=None,
+            destination_account=base_account,
+            amount=profit,
+            kind=Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT,
+            state=Transaction.STATE_DONE
+        )
+        profit_transaction.apply()
+        
+        # Update only the timestamp (profit goes to user's base account, not back to deposit)
+        self.last_profit_accrual_at = now
+        self.save(update_fields=['last_profit_accrual_at', 'updated_at'])
 
     def get_persian_created_at(self):
         """Return Persian date for created_at"""
@@ -117,7 +153,8 @@ class Deposit(models.Model):
         
         start_str = get_persian_date_display(profit_start_date) if profit_start_date else '-'
         next_str = get_persian_date_display(next_profit_date) if next_profit_date else '-'
-        return f"شروع: {start_str} - میانگین: ${self.initial_balance:,.2f} - سود بعدی: {next_str}"
+        avg_balance = self.initial_balance if self.initial_balance is not None else Decimal('0.00')
+        return f"شروع: {start_str} - میانگین: ${avg_balance:,.2f} - سود بعدی: {next_str}"
     get_profit_calculation_info.short_description = 'اطلاعات سود'
 
     def __str__(self):

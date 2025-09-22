@@ -1,10 +1,40 @@
 import threading
 import time
-from datetime import timedelta
+from datetime import timedelta, date
 from django.db.models import Q
 from django.utils import timezone
+from decimal import Decimal
 
 _scheduler_started = False
+
+
+def _create_daily_snapshots():
+    """Create daily snapshots for all accounts and deposits."""
+    from .models import Account, AccountDailyBalance, Deposit, DepositDailyBalance
+    
+    today = timezone.now().date()
+    created_accounts = 0
+    created_deposits = 0
+    
+    # Snapshot accounts
+    for account in Account.objects.all():
+        obj, was_created = AccountDailyBalance.objects.get_or_create(
+            account=account, snapshot_date=today,
+            defaults={'balance': Decimal(account.balance)}
+        )
+        if was_created:
+            created_accounts += 1
+    
+    # Snapshot deposits
+    for deposit in Deposit.objects.all():
+        obj, was_created = DepositDailyBalance.objects.get_or_create(
+            deposit=deposit, snapshot_date=today,
+            defaults={'balance': Decimal(deposit.balance)}
+        )
+        if was_created:
+            created_deposits += 1
+    
+    return created_accounts, created_deposits
 
 
 def _accrue_due_profits_once():
@@ -63,8 +93,17 @@ def _accrue_due_profits_once():
 
 def _scheduler_loop():
     # Run periodic scan every 60 seconds
+    last_snapshot_date = None
+    
     while True:
         try:
+            # Create daily snapshots at midnight
+            today = timezone.now().date()
+            if last_snapshot_date != today:
+                _create_daily_snapshots()
+                last_snapshot_date = today
+            
+            # Accrue profits for due accounts and deposits
             _accrue_due_profits_once()
         except Exception:
             # swallow errors and keep running
