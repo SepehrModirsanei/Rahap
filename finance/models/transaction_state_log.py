@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from persiantools.jdatetime import JalaliDateTime
+from ..utils import get_persian_date_display
 
 
 class TransactionStateLog(models.Model):
@@ -19,18 +19,12 @@ class TransactionStateLog(models.Model):
         verbose_name_plural = 'گزارش‌های وضعیت تراکنش'
 
     def get_persian_created_at(self):
-        """Return Persian formatted creation date"""
-        if self.created_at:
-            jalali = JalaliDateTime(self.created_at)
-            return jalali.strftime('%Y/%m/%d %H:%M:%S')
-        return '-'
+        """Return Persian formatted creation date (localized to Asia/Tehran)"""
+        return get_persian_date_display(self.created_at)
     
     def get_persian_changed_at(self):
-        """Return Persian formatted change date"""
-        if self.changed_at:
-            jalali = JalaliDateTime(self.changed_at)
-            return jalali.strftime('%Y/%m/%d %H:%M:%S')
-        return '-'
+        """Return Persian formatted change date (localized to Asia/Tehran)"""
+        return get_persian_date_display(self.changed_at)
 
     def __str__(self):
         return f"Txn {self.transaction.id}: {self.from_state} → {self.to_state} by {self.changed_by} at {self.changed_at}"
