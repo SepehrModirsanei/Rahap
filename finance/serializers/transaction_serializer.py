@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from ..models import Transaction, Account
+from ..services.quote_service import QuoteService
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -51,8 +52,34 @@ class TransactionSerializer(serializers.ModelSerializer):
         elif kind == Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
             if not (source_account and destination_account):
                 raise serializers.ValidationError('source_account and destination_account are required for account_to_account')
-            if source_account.account_type != destination_account.account_type and not exchange_rate:
-                raise serializers.ValidationError('exchange_rate required for cross-currency transfers')
+            # Auto-quote for API usage if cross-currency and rates not provided
+            if source_account.account_type != destination_account.account_type:
+                amount = attrs.get('amount')
+                if amount is None:
+                    raise serializers.ValidationError('amount is required for cross-currency transfers')
+                quote = QuoteService.compute_destination_amount(
+                    float(amount),
+                    source_account.account_type,
+                    destination_account.account_type,
+                )
+                # If rial<->fx, we set exchange_rate; if fx<->fx we set source/dest IRR prices
+                if quote.get('destination_amount') is None:
+                    # If still none, require explicit exchange info
+                    if destination_account.account_type == Account.ACCOUNT_TYPE_RIAL or source_account.account_type == Account.ACCOUNT_TYPE_RIAL:
+                        if not exchange_rate:
+                            raise serializers.ValidationError('exchange_rate required for rial cross-currency when quote unavailable')
+                    else:
+                        if not (attrs.get('source_price_irr') and attrs.get('dest_price_irr')):
+                            raise serializers.ValidationError('source_price_irr and dest_price_irr required for FX to FX when quote unavailable')
+                else:
+                    if destination_account.account_type == Account.ACCOUNT_TYPE_RIAL or source_account.account_type == Account.ACCOUNT_TYPE_RIAL:
+                        if quote.get('exchange_rate'):
+                            attrs['exchange_rate'] = quote['exchange_rate']
+                    else:
+                        if quote.get('source_price_irr'):
+                            attrs['source_price_irr'] = quote['source_price_irr']
+                        if quote.get('dest_price_irr'):
+                            attrs['dest_price_irr'] = quote['dest_price_irr']
         elif kind == Transaction.KIND_ACCOUNT_TO_DEPOSIT_INITIAL:
             if not (source_account and destination_deposit):
                 raise serializers.ValidationError('source_account and destination_deposit are required for account_to_deposit_initial')

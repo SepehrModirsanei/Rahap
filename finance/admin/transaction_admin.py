@@ -19,7 +19,7 @@ class TransactionAdmin(admin.ModelAdmin):
             'fields': ('transaction_code', 'user', 'kind', 'amount', 'state', 'scheduled_for')
         }),
         ('Account Information', {
-            'fields': ('source_account', 'destination_account', 'destination_deposit', 'exchange_rate'),
+            'fields': ('source_account', 'destination_account', 'destination_deposit', 'exchange_rate', 'destination_amount', 'source_price_irr', 'dest_price_irr'),
             'description': 'Source and destination accounts for the transaction'
         }),
         ('Credit Increase Details', {

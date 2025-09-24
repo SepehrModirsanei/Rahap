@@ -27,6 +27,8 @@
     return row;
   }
 
+  // (UI helpers removed to avoid overriding correct destination price behavior)
+
   function toggleFields() {
     var kind = byId('id_kind');
     if (!kind) return;
@@ -225,7 +227,16 @@
     var dstPrice = toNumber(dstPriceEl);
 
     if (isNaN(amt)) { setDecimal(outEl, NaN); return; }
-    if (!srcType || !dstType) { setDecimal(outEl, NaN); return; }
+    if (!srcType || !dstType) {
+      // Fallback: if both IRR prices are provided, compute FX→FX via IRR
+      if (!isNaN(srcPrice) && srcPrice > 0 && !isNaN(dstPrice) && dstPrice > 0) {
+        var viaIrr = amt * (srcPrice / dstPrice);
+        setDecimal(outEl, viaIrr, 6);
+        return;
+      }
+      setDecimal(outEl, NaN);
+      return;
+    }
 
     var same = srcType === dstType;
     var destVal = NaN;
@@ -248,6 +259,8 @@
 
     setDecimal(outEl, destVal, 6);
   }
+
+  // (Dynamic show/hide removed to preserve original admin layout and behaviors)
 
   function filterSpecializedFormChoices() {
     if (isAjaxInProgress) return;
@@ -339,7 +352,7 @@
         filterAccountChoices();
       });
       // Run toggleFields immediately
-      setTimeout(toggleFields, 100);
+      setTimeout(function(){ toggleFields(); }, 100);
     }
     
     if (user) {
@@ -381,9 +394,7 @@
     // Check if this is an edit form with pre-selected user
     if (isSpecializedForm && user && user.value && user.value !== '') {
       console.log('Edit form detected with user:', user.value);
-      setTimeout(function() {
-        filterSpecializedFormChoices();
-      }, 100);
+      setTimeout(function() { filterSpecializedFormChoices(); }, 100);
     }
     
     // Mark as initialized to prevent multiple initializations

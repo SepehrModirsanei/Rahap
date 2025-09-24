@@ -19,7 +19,7 @@ class AdminCRUDTests(TestCase):
         cls.user2 = User.objects.create_user(
             username='user2', email='user2@example.com', password='userpass2'
         )
-       
+
     def setUp(self):
         self.client.force_login(self.admin)
 
