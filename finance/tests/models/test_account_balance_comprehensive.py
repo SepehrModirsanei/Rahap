@@ -125,8 +125,8 @@ class AccountBalanceComprehensiveTests(FinanceTestCase):
         expected_rial_balance = Decimal('1000000.00') - Decimal('100000.00')
         self.assertEqual(self.rial_account.balance, expected_rial_balance)
         
-        # Gold account should increase by converted amount (rial / exchange_rate)
-        converted_amount = Decimal('100000.00') / Decimal('1000.0')  # 100000 rial / 1000 rial/gold = 100 gold
+        # Gold account should increase by converted amount stored as destination_amount
+        converted_amount = Decimal('100000.00') / Decimal('1000.0')
         expected_gold_balance = Decimal('10.00') + converted_amount
         self.assertEqual(self.gold_account.balance, expected_gold_balance)
 
@@ -149,8 +149,8 @@ class AccountBalanceComprehensiveTests(FinanceTestCase):
         expected_gold_balance = Decimal('10.00') - Decimal('5.00')
         self.assertEqual(self.gold_account.balance, expected_gold_balance)
         
-        # Rial account should increase by converted amount (gold * exchange_rate)
-        converted_amount = Decimal('5.00') * Decimal('1000.0')  # 5 gold * 1000 rial/gold = 5000 rial
+        # Rial account should increase by converted amount stored as destination_amount
+        converted_amount = Decimal('5.00') * Decimal('1000.0')
         expected_rial_balance = Decimal('1000000.00') + converted_amount
         self.assertEqual(self.rial_account.balance, expected_rial_balance)
 

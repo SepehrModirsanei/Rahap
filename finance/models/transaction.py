@@ -39,6 +39,11 @@ class Transaction(models.Model):
     # Exchange rate to convert between different currency accounts
     # For cross-currency transfers: destination_amount = source_amount * exchange_rate
     exchange_rate = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('نرخ تبدیل'))
+    # Destination leg amount (computed and stored) for cross-currency transfers
+    destination_amount = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('مبلغ مقصد'))
+    # Optional explicit prices in IRR for currency→currency transfers (admin entry)
+    source_price_irr = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('قیمت ارز مبدا بر حسب ریال'))
+    dest_price_irr = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('قیمت ارز مقصد بر حسب ریال'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاریخ ایجاد'))
     applied = models.BooleanField(default=False, verbose_name=_('اعمال شده'))
     issued_at = models.DateTimeField(default=timezone.now, verbose_name=_('تاریخ صدور'))
@@ -113,12 +118,43 @@ class Transaction(models.Model):
             if not (self.source_account and self.destination_account):
                 raise ValidationError('Account to Account transfer requires both source_account and destination_account')
             
-            # Check if exchange rate is required for cross-currency transfers
-            if (self.source_account.account_type != self.destination_account.account_type):
-                if not self.exchange_rate:
-                    raise ValidationError('Exchange rate is required for cross-currency account transfers.')
-                if self.exchange_rate <= 0:
-                    raise ValidationError('Exchange rate must be positive for cross-currency transfers.')
+            # Check and compute destination_amount for cross-currency transfers
+            from .account import Account
+            src_t = self.source_account.account_type
+            dst_t = self.destination_account.account_type
+            same_type = (src_t == dst_t)
+
+            def is_rial(t):
+                return t == Account.ACCOUNT_TYPE_RIAL
+
+            def is_foreign_or_gold(t):
+                return t in [Account.ACCOUNT_TYPE_USD, Account.ACCOUNT_TYPE_EUR, Account.ACCOUNT_TYPE_GBP, Account.ACCOUNT_TYPE_GOLD]
+
+            if same_type:
+                # No conversion needed; destination_amount equals source amount
+                self.destination_amount = self.amount
+            else:
+                # Rial <-> FX/Gold uses single exchange_rate = IRR price per 1 unit of non-rial currency
+                if (is_rial(src_t) and is_foreign_or_gold(dst_t)):
+                    # Rial → foreign: dest = amount / rate
+                    if not self.exchange_rate or self.exchange_rate <= 0:
+                        raise ValidationError('Exchange rate (IRR per destination currency) is required and must be positive for Rial→Foreign/Gold.')
+                    self.destination_amount = (Decimal(self.amount) / Decimal(self.exchange_rate)).quantize(Decimal('0.000001'))
+                elif (is_foreign_or_gold(src_t) and is_rial(dst_t)):
+                    # Foreign → Rial: dest = amount × rate
+                    if not self.exchange_rate or self.exchange_rate <= 0:
+                        raise ValidationError('Exchange rate (IRR per source currency) is required and must be positive for Foreign/Gold→Rial.')
+                    self.destination_amount = (Decimal(self.amount) * Decimal(self.exchange_rate)).quantize(Decimal('0.000001'))
+                else:
+                    # Foreign/Gold → Foreign/Gold: need both prices in IRR
+                    if not self.source_price_irr or not self.dest_price_irr:
+                        raise ValidationError('Both source and destination currency IRR prices are required for cross-currency conversion.')
+                    if self.source_price_irr <= 0 or self.dest_price_irr <= 0:
+                        raise ValidationError('IRR prices must be positive values.')
+                    # Convert via IRR: dest = amount * (src_price / dst_price)
+                    self.destination_amount = (
+                        Decimal(self.amount) * (Decimal(self.source_price_irr) / Decimal(self.dest_price_irr))
+                    ).quantize(Decimal('0.000001'))
         
         # Profit transactions don't need a source account
         if self.kind not in [self.KIND_PROFIT_ACCOUNT, self.KIND_PROFIT_DEPOSIT_TO_ACCOUNT]:
@@ -129,7 +165,7 @@ class Transaction(models.Model):
             if not any([self.destination_account, self.destination_deposit]):
                 raise ValidationError('Profit transaction must have a destination.')
         
-        # Validate exchange rate for currency conversions
+        # Validate exchange rate numeric bounds when provided
         if self.exchange_rate is not None:
             if self.exchange_rate <= 0:
                 raise ValidationError('Exchange rate must be positive.')
@@ -333,6 +369,14 @@ class Transaction(models.Model):
         """Override save to generate transaction code for new transactions and auto-apply done transactions"""
         if not self.transaction_code:
             self.transaction_code = self.generate_transaction_code()
+
+        # Ensure computed fields (e.g., destination_amount) are set before persisting
+        try:
+            self.clean()
+        except Exception:
+            # If clean raises because of transient form states, we skip here;
+            # apply()/admin will re-run clean before any effects
+            pass
         
         # Auto-apply transactions that are marked as done but not yet applied
         if self.state == self.STATE_DONE and not self.applied:

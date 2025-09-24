@@ -128,16 +128,16 @@ class AccountModelTest(TestCase):
         self.assertEqual(self.gold_account.account_type, Account.ACCOUNT_TYPE_GOLD)
         print(f"Gold account type: {self.gold_account.account_type}")
         
-        # Test foreign currency account
+        # Test foreign currency account (use USD as representative)
         foreign_account = Account.objects.create(
             user=self.user,
             name='Test Foreign Account',
-            account_type=Account.ACCOUNT_TYPE_FOREIGN,
+            account_type=Account.ACCOUNT_TYPE_USD,
             initial_balance=Decimal('1000.00'),
             monthly_profit_rate=Decimal('1.0')
         )
         
-        self.assertEqual(foreign_account.account_type, Account.ACCOUNT_TYPE_FOREIGN)
+        self.assertEqual(foreign_account.account_type, Account.ACCOUNT_TYPE_USD)
         print(f"Foreign account type: {foreign_account.account_type}")
         
         print("✅ Account types working correctly!")

@@ -10,11 +10,15 @@ from ..utils import get_persian_date_display
 class Account(models.Model):
     ACCOUNT_TYPE_RIAL = 'rial'
     ACCOUNT_TYPE_GOLD = 'gold'
-    ACCOUNT_TYPE_FOREIGN = 'foreign currency'
+    ACCOUNT_TYPE_USD = 'usd'
+    ACCOUNT_TYPE_EUR = 'eur'
+    ACCOUNT_TYPE_GBP = 'gbp'
     ACCOUNT_TYPE_CHOICES = [
         (ACCOUNT_TYPE_RIAL, _('حساب ریالی')),
         (ACCOUNT_TYPE_GOLD, _('حساب طلا')),
-        (ACCOUNT_TYPE_FOREIGN, _('حساب ارزی')),
+        (ACCOUNT_TYPE_USD, _('حساب دلاری (USD)')),
+        (ACCOUNT_TYPE_EUR, _('حساب یورویی (EUR)')),
+        (ACCOUNT_TYPE_GBP, _('حساب پوندی (GBP)')),
     ]
 
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='accounts', verbose_name=_('کاربر'))
@@ -47,31 +51,25 @@ class Account(models.Model):
             applied=True
         )
         
-        # Calculate incoming amount (considering exchange rates)
+        # Helpers
+        def is_foreign_type(acc_type: str) -> bool:
+            return acc_type in [
+                self.ACCOUNT_TYPE_USD,
+                self.ACCOUNT_TYPE_EUR,
+                self.ACCOUNT_TYPE_GBP,
+            ]
+
+        # Calculate incoming amount using stored destination_amount for cross-currency transfers
         incoming_total = Decimal('0')
         for txn in incoming_txns:
             if txn.kind == Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
-                # For account-to-account transfers, we need to consider exchange rates
-                if (txn.source_account and txn.destination_account and 
-                    txn.source_account.account_type != txn.destination_account.account_type and
-                    txn.exchange_rate):
-                    # Cross-currency transfer: convert amount using exchange rate
-                    # Exchange rate represents "rials per foreign currency/gold"
-                    if (txn.source_account.account_type in ['foreign currency', 'gold'] and 
-                        txn.destination_account.account_type == 'rial'):
-                        # Foreign/Gold → Rial: amount * exchange_rate
-                        converted_amount = Decimal(txn.amount) * Decimal(txn.exchange_rate)
-                    elif (txn.source_account.account_type == 'rial' and 
-                          txn.destination_account.account_type in ['foreign currency', 'gold']):
-                        # Rial → Foreign/Gold: amount / exchange_rate
-                        converted_amount = Decimal(txn.amount) / Decimal(txn.exchange_rate)
+                if txn.destination_account_id == self.id:
+                    # Use the pre-computed destination_amount for the destination leg
+                    if txn.destination_amount is not None:
+                        incoming_total += Decimal(txn.destination_amount)
                     else:
-                        # Other cross-currency combinations (e.g., gold to foreign currency)
-                        # For now, use multiplication as default
-                        converted_amount = Decimal(txn.amount) * Decimal(txn.exchange_rate)
-                    incoming_total += converted_amount
+                        incoming_total += Decimal(txn.amount)
                 else:
-                    # Same currency or no exchange rate needed
                     incoming_total += Decimal(txn.amount)
             elif txn.kind == Transaction.KIND_CREDIT_INCREASE:
                 # Credit increase adds money directly to this account

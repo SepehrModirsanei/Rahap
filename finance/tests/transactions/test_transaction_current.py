@@ -28,7 +28,7 @@ class TransactionCurrentTests(TestCase):
         cls.foreign_account = Account.objects.create(
             user=cls.user,
             name='Foreign Account',
-            account_type=Account.ACCOUNT_TYPE_FOREIGN,
+            account_type=Account.ACCOUNT_TYPE_USD,
             initial_balance=Decimal('100.00'),
             monthly_profit_rate=Decimal('1.0')
         )

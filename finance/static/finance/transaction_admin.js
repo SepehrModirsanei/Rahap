@@ -175,6 +175,80 @@
     }
   }
 
+  // ------------------ Exchange live preview for Account→Account ------------------
+  function getSelectedAccountType(selectEl) {
+    if (!selectEl) return '';
+    var opt = selectEl.options[selectEl.selectedIndex];
+    if (!opt) return '';
+    var txt = opt.textContent || '';
+    var m = txt.match(/\(([^)]+)\)\s*$/);
+    return m ? (m[1] || '').trim().toLowerCase() : '';
+  }
+
+  function toNumber(el) {
+    if (!el) return NaN;
+    var v = (el.value || '').replace(/,/g, '').trim();
+    var n = parseFloat(v);
+    return isNaN(n) ? NaN : n;
+  }
+
+  function setDecimal(el, value, decimals) {
+    if (!el) return;
+    if (value == null || isNaN(value)) {
+      el.value = '';
+      return;
+    }
+    var d = typeof decimals === 'number' ? decimals : 6;
+    el.value = Number(value).toFixed(d);
+  }
+
+  function isFxOrGold(t) {
+    return ['usd', 'eur', 'gbp', 'gold'].indexOf((t || '').toLowerCase()) >= 0;
+  }
+
+  function recomputeDestinationAmount() {
+    var amountEl = byId('id_amount');
+    var srcEl = byId('id_source_account');
+    var dstEl = byId('id_destination_account');
+    var rateEl = byId('id_exchange_rate');
+    var outEl = byId('id_destination_amount');
+    var srcPriceEl = byId('id_source_price_irr');
+    var dstPriceEl = byId('id_dest_price_irr');
+
+    if (!amountEl || !(srcEl && dstEl) || !outEl) return;
+
+    var amt = toNumber(amountEl);
+    var srcType = getSelectedAccountType(srcEl);
+    var dstType = getSelectedAccountType(dstEl);
+    var rate = toNumber(rateEl);
+    var srcPrice = toNumber(srcPriceEl);
+    var dstPrice = toNumber(dstPriceEl);
+
+    if (isNaN(amt)) { setDecimal(outEl, NaN); return; }
+    if (!srcType || !dstType) { setDecimal(outEl, NaN); return; }
+
+    var same = srcType === dstType;
+    var destVal = NaN;
+
+    if (same) {
+      destVal = amt;
+    } else if (srcType === 'rial' && isFxOrGold(dstType)) {
+      if (isNaN(rate) || rate <= 0) { setDecimal(outEl, NaN); return; }
+      destVal = amt / rate;
+    } else if (dstType === 'rial' && isFxOrGold(srcType)) {
+      if (isNaN(rate) || rate <= 0) { setDecimal(outEl, NaN); return; }
+      destVal = amt * rate;
+    } else if (isFxOrGold(srcType) && isFxOrGold(dstType)) {
+      if (isNaN(srcPrice) || srcPrice <= 0 || isNaN(dstPrice) || dstPrice <= 0) { setDecimal(outEl, NaN); return; }
+      destVal = amt * (srcPrice / dstPrice);
+    } else {
+      // Fallback
+      destVal = amt;
+    }
+
+    setDecimal(outEl, destVal, 6);
+  }
+
   function filterSpecializedFormChoices() {
     if (isAjaxInProgress) return;
     var user = byId('id_user');
@@ -284,6 +358,11 @@
     } else {
       console.log('No user field found!');
     }
+
+    // Hook up live preview listeners for exchange computations
+    ['id_amount','id_source_account','id_destination_account','id_exchange_rate','id_source_price_irr','id_dest_price_irr']
+      .forEach(function(id){ var el = byId(id); if (el) { el.addEventListener('input', recomputeDestinationAmount); el.addEventListener('change', recomputeDestinationAmount); } });
+    setTimeout(recomputeDestinationAmount, 200);
     
     // Initial filter if form is being edited
     if (kind && user) {
