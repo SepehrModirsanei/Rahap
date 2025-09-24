@@ -68,6 +68,7 @@ class Transaction(models.Model):
     admin_opinion = models.TextField(blank=True, verbose_name=_('نظر ادمین'))
     treasurer_opinion = models.TextField(blank=True, verbose_name=_('نظر خزانه‌دار'))
     finance_manager_opinion = models.TextField(blank=True, verbose_name=_('نظر مدیر مالی'))
+    user_comment = models.TextField(blank=True, verbose_name=_('نظر کاربر'))
     
     class Meta:
         verbose_name = _('تراکنش')

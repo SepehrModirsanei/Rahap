@@ -151,65 +151,46 @@
   // Prevent multiple AJAX calls
   var isAjaxInProgress = false;
 
-  function filterSpecializedFormChoices() {
-    console.log('filterSpecializedFormChoices called');
-    
-    if (isAjaxInProgress) {
-      console.log('AJAX already in progress, skipping');
-      return;
+  function populateBankDestinationFromData(data) {
+    var select = byId('id_bank_destination');
+    if (!select) return;
+    select.innerHTML = '';
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '--- انتخاب مقصد (اختیاری) ---';
+    select.appendChild(placeholder);
+    if (data && data.bank_info) {
+      if (data.bank_info.card_number) {
+        var opt1 = document.createElement('option');
+        opt1.value = 'card:' + data.bank_info.card_number;
+        opt1.textContent = 'کارت: ' + data.bank_info.card_number;
+        select.appendChild(opt1);
+      }
+      if (data.bank_info.sheba_number) {
+        var opt2 = document.createElement('option');
+        opt2.value = 'sheba:' + data.bank_info.sheba_number;
+        opt2.textContent = 'شبا: ' + data.bank_info.sheba_number;
+        select.appendChild(opt2);
+      }
     }
-    
+  }
+
+  function filterSpecializedFormChoices() {
+    if (isAjaxInProgress) return;
     var user = byId('id_user');
     var sourceAccount = byId('id_source_account');
     var destinationAccount = byId('id_destination_account');
-    
-    console.log('User field:', user);
-    console.log('Source account field:', sourceAccount);
-    console.log('Destination account field:', destinationAccount);
-    
-    if (!user) {
-      console.log('No user field found');
-      return;
-    }
-    
-    var userId = user.value;
-    console.log('User ID:', userId);
-    
-    // Clear current selections
-    if (sourceAccount) sourceAccount.innerHTML = '<option value="">---------</option>';
-    if (destinationAccount) destinationAccount.innerHTML = '<option value="">---------</option>';
-    
-    if (!userId) {
-      console.log('No user ID selected');
-      return;
-    }
-    
-    console.log('Proceeding with AJAX call for user:', userId);
-    
-    // Determine form type based on URL or page content
-    var isCreditIncrease = window.location.href.includes('creditincrease');
     var isWithdrawalRequest = window.location.href.includes('withdrawalrequest');
-    var isAccountTransfer = window.location.href.includes('accounttransfer');
-    
-    // Set AJAX flag
+    if (!user || !user.value) return;
     isAjaxInProgress = true;
-    
-    // Make AJAX request to get filtered accounts
     var xhr = new XMLHttpRequest();
-    var kind = 'credit_increase'; // default
-    if (isWithdrawalRequest) kind = 'withdrawal_request';
-    else if (isAccountTransfer) kind = 'account_to_account';
-    
-    xhr.open('GET', '/api/admin/get-user-accounts/?user_id=' + userId + '&kind=' + kind, true);
+    var kind = isWithdrawalRequest ? 'withdrawal_request' : (window.location.href.includes('accounttransfer') ? 'account_to_account' : 'credit_increase');
+    xhr.open('GET', '/api/admin/get-user-accounts/?user_id=' + user.value + '&kind=' + kind, true);
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4 && xhr.status === 200) {
-        console.log('AJAX response received:', xhr.responseText);
         var data = JSON.parse(xhr.responseText);
-        console.log('Parsed data:', data);
-        
-        // Populate source account choices
         if (data.source_accounts && sourceAccount) {
-          console.log('Populating source accounts:', data.source_accounts);
+          sourceAccount.innerHTML = '<option value="">---------</option>';
           data.source_accounts.forEach(function(account) {
             var option = document.createElement('option');
             option.value = account.id;
@@ -217,10 +198,8 @@
             sourceAccount.appendChild(option);
           });
         }
-        
-        // Populate destination account choices
         if (data.destination_accounts && destinationAccount) {
-          console.log('Populating destination accounts:', data.destination_accounts);
+          destinationAccount.innerHTML = '<option value="">---------</option>';
           data.destination_accounts.forEach(function(account) {
             var option = document.createElement('option');
             option.value = account.id;
@@ -228,11 +207,9 @@
             destinationAccount.appendChild(option);
           });
         }
-      } else if (xhr.readyState === 4) {
-        console.log('AJAX error:', xhr.status, xhr.responseText);
+        // Populate bank destination using returned bank_info
+        populateBankDestinationFromData(data);
       }
-      
-      // Clear AJAX flag when request completes (success or error)
       if (xhr.readyState === 4) {
         isAjaxInProgress = false;
       }

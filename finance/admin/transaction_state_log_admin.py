@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
 from ..models import TransactionStateLog
 
 
@@ -6,7 +7,7 @@ class TransactionStateLogInline(admin.TabularInline):
     model = TransactionStateLog
     extra = 0
     can_delete = False
-    readonly_fields = ('get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'from_state', 'to_state', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at', 'notes')
+    readonly_fields = ('get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'get_from_state_persian', 'get_to_state_persian', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at', 'notes')
     fields = readonly_fields
 
     def get_transaction_code(self, obj):
@@ -53,12 +54,42 @@ class TransactionStateLogInline(admin.TabularInline):
         return False
 
 
+class FromStatePersianFilter(SimpleListFilter):
+    title = 'از وضعیت'
+    parameter_name = 'from_state'
+
+    def lookups(self, request, model_admin):
+        from ..models.transaction import Transaction
+        return [(key, label) for key, label in Transaction.STATE_CHOICES]
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            return queryset.filter(from_state=value)
+        return queryset
+
+
+class ToStatePersianFilter(SimpleListFilter):
+    title = 'به وضعیت'
+    parameter_name = 'to_state'
+
+    def lookups(self, request, model_admin):
+        from ..models.transaction import Transaction
+        return [(key, label) for key, label in Transaction.STATE_CHOICES]
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            return queryset.filter(to_state=value)
+        return queryset
+
+
 @admin.register(TransactionStateLog)
 class TransactionStateLogAdmin(admin.ModelAdmin):
-    list_display = ('transaction', 'get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'from_state', 'to_state', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at')
-    list_filter = ('to_state', 'changed_at', 'changed_by', 'transaction__kind')
+    list_display = ('transaction', 'get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'get_from_state_persian', 'get_to_state_persian', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at')
+    list_filter = (FromStatePersianFilter, ToStatePersianFilter, 'changed_at', 'changed_by', 'transaction__kind')
     search_fields = ('transaction__id', 'transaction__transaction_code', 'transaction__user__username', 'changed_by__username')
-    readonly_fields = ('transaction', 'get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'from_state', 'to_state', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at', 'notes')
+    readonly_fields = ('transaction', 'get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'get_from_state_persian', 'get_to_state_persian', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at', 'notes')
     date_hierarchy = 'changed_at'
 
     def get_persian_created_at(self, obj):

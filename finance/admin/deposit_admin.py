@@ -8,7 +8,7 @@ class ReadOnlyTransactionInline(admin.TabularInline):
     model = Transaction
     extra = 0
     can_delete = False
-    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
+    readonly_fields = ('transaction_code', 'user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
     fields = readonly_fields
 
     def has_add_permission(self, request, obj=None):

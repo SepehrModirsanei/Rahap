@@ -3,15 +3,39 @@ from ..models import Transaction, Account
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    bank_destination = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    saved_bank_info = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Transaction
         fields = (
             'id', 'user', 'source_account', 'destination_account', 'destination_deposit', 
-            'amount', 'kind', 'exchange_rate', 'state', 'applied', 'issued_at', 'scheduled_for', 'created_at'
+            'amount', 'kind', 'exchange_rate', 'state', 'applied', 'issued_at', 'scheduled_for', 'created_at',
+            'admin_opinion', 'treasurer_opinion', 'finance_manager_opinion', 'user_comment', 'transaction_code',
+            'bank_destination', 'saved_bank_info'
         )
-        read_only_fields = ('user', 'applied', 'issued_at', 'created_at')
+        read_only_fields = ('user', 'applied', 'issued_at', 'created_at', 'admin_opinion', 'treasurer_opinion', 'finance_manager_opinion', 'transaction_code', 'saved_bank_info')
+
+    def get_saved_bank_info(self, obj):
+        user = obj.user if isinstance(obj, Transaction) else self.context.get('request').user
+        if not user or not getattr(user, 'id', None):
+            return {}
+        return {
+            'card_number': user.card_number or '',
+            'sheba_number': user.sheba_number or ''
+        }
 
     def validate(self, attrs):
+        # Map bank_destination into withdrawal fields if provided
+        dest = attrs.pop('bank_destination', None)
+        if dest:
+            if dest.startswith('card:'):
+                attrs['withdrawal_card_number'] = dest.split(':', 1)[1]
+                attrs['withdrawal_sheba_number'] = ''
+            elif dest.startswith('sheba:'):
+                attrs['withdrawal_sheba_number'] = dest.split(':', 1)[1]
+                attrs['withdrawal_card_number'] = ''
+        
         kind = attrs.get('kind')
         source_account = attrs.get('source_account')
         destination_account = attrs.get('destination_account')

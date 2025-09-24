@@ -1,12 +1,13 @@
 from django.contrib import admin
 from ..models import User, Account, Deposit, Transaction, AccountDailyBalance, DepositDailyBalance
+from .filters import ProfitCalculationFilter
 
 
 class ReadOnlyTransactionInline(admin.TabularInline):
     model = Transaction
     extra = 0
     can_delete = False
-    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
+    readonly_fields = ('transaction_code', 'user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'scheduled_for', 'created_at')
     fields = readonly_fields
 
     def has_add_permission(self, request, obj=None):
@@ -110,7 +111,7 @@ class AnalyticsDepositAdmin(admin.ModelAdmin):
 
 
 class AnalyticsTransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'kind', 'amount', 'exchange_rate', 'applied', 'scheduled_for', 'created_at')
+    list_display = ('transaction_code', 'id', 'user', 'kind', 'amount', 'exchange_rate', 'applied', 'scheduled_for', 'created_at')
     list_filter = ('kind', 'applied', 'scheduled_for', 'created_at')
     search_fields = ('user__username',)
     date_hierarchy = 'created_at'
@@ -177,3 +178,12 @@ class AnalyticsDepositDailyBalanceAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+# Register analytics admins with the main admin site
+admin.site.register(User, AnalyticsUserAdmin)
+admin.site.register(Account, AnalyticsAccountAdmin)
+admin.site.register(Deposit, AnalyticsDepositAdmin)
+admin.site.register(Transaction, AnalyticsTransactionAdmin)
+admin.site.register(AccountDailyBalance, AnalyticsAccountDailyBalanceAdmin)
+admin.site.register(DepositDailyBalance, AnalyticsDepositDailyBalanceAdmin)

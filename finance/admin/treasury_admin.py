@@ -10,7 +10,7 @@ class ReadOnlyTransactionInline(admin.TabularInline):
     model = Transaction
     extra = 0
     can_delete = False
-    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'get_persian_created_at')
+    readonly_fields = ('transaction_code', 'user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'get_persian_created_at')
     fields = readonly_fields
 
     def has_add_permission(self, request, obj=None):
@@ -104,7 +104,7 @@ class TreasuryDepositAdmin(admin.ModelAdmin):
 
 
 class TreasuryTransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'get_persian_scheduled_for', 'get_persian_created_at')
+    list_display = ('transaction_code', 'id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'get_persian_scheduled_for', 'get_persian_created_at')
     list_filter = ('kind', 'state', 'applied', 'scheduled_for', 'created_at')
     search_fields = ('user__username',)
     actions = ['advance_state', 'mark_waiting_sandogh', 'mark_verified_khazanedar', 'mark_done', 'apply_transactions', 'revert_transactions', 'bulk_schedule']
