@@ -5,6 +5,9 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 import uuid
+from datetime import timedelta
+from zoneinfo import ZoneInfo
+from persiantools.jdatetime import JalaliDateTime
 from ..utils import get_persian_date_display
 
 
@@ -27,7 +30,7 @@ class Transaction(models.Model):
 
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='transactions', verbose_name=_('کاربر'))
     # Unique transaction code for easy identification
-    transaction_code = models.CharField(max_length=20, unique=True, editable=False, null=True, blank=True, verbose_name=_('کد تراکنش'))
+    transaction_code = models.CharField(max_length=64, unique=True, editable=False, null=True, blank=True, verbose_name=_('کد تراکنش'))
     source_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='outgoing_account_transactions', verbose_name=_('حساب مبدا'))
     destination_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_account_transactions', verbose_name=_('حساب مقصد'))
     destination_deposit = models.ForeignKey('Deposit', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_deposit_transactions', verbose_name=_('سپرده مقصد'))
@@ -285,11 +288,41 @@ class Transaction(models.Model):
     get_persian_scheduled_for.short_description = 'تاریخ برنامه‌ریزی'
 
     def generate_transaction_code(self):
-        """Generate a unique transaction code"""
-        # Format: TXN-YYYYMMDD-XXXXXX (e.g., TXN-20250921-A1B2C3)
-        date_str = timezone.now().strftime('%Y%m%d')
-        unique_part = str(uuid.uuid4())[:6].upper()
-        return f"TXN-{date_str}-{unique_part}"
+        """Generate a unique transaction code with requested format.
+
+        Format: <Type>-<UserId>-<PersianDate>-<Seq>
+        - Type: In | Out | Profit | Transfer | Transition
+        - UserId: numeric user id
+        - PersianDate: YYYYMMDD in Jalali (Asia/Tehran)
+        - Seq: zero-padded 2-digit count for that user+kind on that Persian date
+        """
+        kind_prefix_map = {
+            self.KIND_CREDIT_INCREASE: 'In',
+            self.KIND_WITHDRAWAL_REQUEST: 'Out',
+            self.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT: 'Transfer',
+            self.KIND_ACCOUNT_TO_DEPOSIT_INITIAL: 'Transition',
+            self.KIND_PROFIT_ACCOUNT: 'Profit',
+            self.KIND_PROFIT_DEPOSIT_TO_ACCOUNT: 'Profit',
+        }
+
+        prefix = kind_prefix_map.get(self.kind, 'Txn')
+        user_part = str(self.user_id or (self.user.id if self.user else '0'))
+
+        tehran_tz = ZoneInfo('Asia/Tehran')
+        issued_dt = self.issued_at or timezone.now()
+        issued_local = issued_dt.astimezone(tehran_tz)
+        jalali_date = JalaliDateTime(issued_local).strftime('%Y%m%d')
+
+        # Calculate per-user-per-kind sequence for that Persian date using Tehran-local day bounds
+        start_local = issued_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_local = start_local + timedelta(days=1)
+        seq = (
+            type(self).objects
+            .filter(user_id=self.user_id, kind=self.kind, issued_at__gte=start_local, issued_at__lt=end_local)
+            .count()
+            + 1
+        )
+        return f"{prefix}-{user_part}-{jalali_date}-{seq:02d}"
 
     def save(self, *args, **kwargs):
         """Override save to generate transaction code for new transactions and auto-apply done transactions"""
