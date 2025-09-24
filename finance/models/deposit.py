@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
@@ -9,7 +9,18 @@ from ..utils import get_persian_date_display
 class Deposit(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='deposits', verbose_name=_('کاربر'))
     initial_balance = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('موجودی اولیه'))
-    monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('نرخ سود ماهانه'))
+    # Profit rate interpretation depends on profit_kind (monthly/yearly)
+    monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('نرخ سود'))
+    # Profit kind: monthly or yearly (calculation remains daily, payout window differs)
+    PROFIT_KIND_MONTHLY = 'monthly'
+    PROFIT_KIND_YEARLY = 'yearly'
+    PROFIT_KIND_CHOICES = [
+        (PROFIT_KIND_MONTHLY, _('ماهانه')),
+        (PROFIT_KIND_YEARLY, _('سالانه')),
+    ]
+    profit_kind = models.CharField(max_length=10, choices=PROFIT_KIND_CHOICES, default=PROFIT_KIND_MONTHLY, verbose_name=_('نوع سود'))
+    # Breakage coefficient (نرخ ضریب شکست) as percentage 0-100
+    breakage_coefficient = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name=_('نرخ ضریب شکست (%)'))
     # Profit goes to base account (not compounded)
     last_profit_accrual_at = models.DateTimeField(null=True, blank=True, verbose_name=_('آخرین تعلق سود'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاریخ ایجاد'))
@@ -49,14 +60,16 @@ class Deposit(models.Model):
         now = timezone.now()
         if not self.monthly_profit_rate:
             return
-        # Check if enough time has passed since last profit accrual (30 days)
-        if self.last_profit_accrual_at and (now - self.last_profit_accrual_at).days < 30:
+        # Determine accrual window based on profit kind (still calculated daily)
+        window_days = 30 if self.profit_kind == self.PROFIT_KIND_MONTHLY else 365
+        # Check if enough time has passed since last profit accrual
+        if self.last_profit_accrual_at and (now - self.last_profit_accrual_at).days < window_days:
             return
         
-        # Compute profit based on daily snapshots over last 30 days ending yesterday
+        # Compute profit based on daily snapshots over last window_days ending yesterday
         from datetime import date, timedelta
         period_end = date.today()
-        period_start = period_end - timedelta(days=30)
+        period_start = period_end - timedelta(days=window_days)
         snapshots = list(self.daily_balances.filter(snapshot_date__gt=period_start).order_by('snapshot_date'))
         # Get carry snapshot on or before start
         carry = self.daily_balances.filter(snapshot_date__lte=period_start).order_by('-snapshot_date').first()
@@ -83,8 +96,8 @@ class Deposit(models.Model):
                 weighted_sum += (bal * days)
         if total_days == 0:
             return
-        # Monthly profit = rate% * (sum of daily balances / 30)
-        average_balance = weighted_sum / Decimal(30)
+        # Profit = rate% * (sum of daily balances / window_days)
+        average_balance = weighted_sum / Decimal(window_days)
         profit = (average_balance * Decimal(self.monthly_profit_rate)) / Decimal(100)
         if profit <= 0:
             return
@@ -145,9 +158,9 @@ class Deposit(models.Model):
         next_profit_date = None
         try:
             if self.last_profit_accrual_at:
-                next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=30)
+                next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=(30 if self.profit_kind == self.PROFIT_KIND_MONTHLY else 365))
             elif self.created_at:
-                next_profit_date = self.created_at + timezone.timedelta(days=30)
+                next_profit_date = self.created_at + timezone.timedelta(days=(30 if self.profit_kind == self.PROFIT_KIND_MONTHLY else 365))
         except Exception:
             next_profit_date = None
         
