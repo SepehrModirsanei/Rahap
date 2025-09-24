@@ -134,8 +134,14 @@ class OperationTransactionAdmin(admin.ModelAdmin):
     apply_transactions.short_description = 'Apply selected transactions'
 
     def submit_to_treasury(self, request, queryset):
-        updated = queryset.update(state='waiting_treasury')
-        self.message_user(request, f"Submitted {updated} to Treasury")
+        moved = 0
+        for txn in queryset:
+            if txn.state != 'waiting_treasury':
+                txn.state = 'waiting_treasury'
+                txn._changed_by = request.user
+                txn.save()
+                moved += 1
+        self.message_user(request, f"Submitted {moved} to Treasury")
     submit_to_treasury.short_description = 'Set state: Waiting for Treasury'
 
     def advance_state(self, request, queryset):

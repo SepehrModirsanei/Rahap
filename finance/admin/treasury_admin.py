@@ -138,18 +138,36 @@ class TreasuryTransactionAdmin(admin.ModelAdmin):
     apply_transactions.short_description = 'Apply selected transactions'
 
     def mark_waiting_sandogh(self, request, queryset):
-        updated = queryset.update(state='waiting_sandogh')
-        self.message_user(request, f"Moved {updated} to Waiting for Sandogh")
+        moved = 0
+        for txn in queryset:
+            if txn.state != 'waiting_sandogh':
+                txn.state = 'waiting_sandogh'
+                txn._changed_by = request.user
+                txn.save()
+                moved += 1
+        self.message_user(request, f"Moved {moved} to Waiting for Sandogh")
     mark_waiting_sandogh.short_description = 'Set state: Waiting for Sandogh'
 
     def mark_verified_khazanedar(self, request, queryset):
-        updated = queryset.update(state='verified_khazanedar')
-        self.message_user(request, f"Moved {updated} to Verified by Khazane dar")
+        moved = 0
+        for txn in queryset:
+            if txn.state != 'verified_khazanedar':
+                txn.state = 'verified_khazanedar'
+                txn._changed_by = request.user
+                txn.save()
+                moved += 1
+        self.message_user(request, f"Moved {moved} to Verified by Khazane dar")
     mark_verified_khazanedar.short_description = 'Set state: Verified by Khazane dar'
 
     def mark_done(self, request, queryset):
-        updated = queryset.update(state='done')
-        self.message_user(request, f"Moved {updated} to Done")
+        moved = 0
+        for txn in queryset:
+            if txn.state != 'done':
+                txn.state = 'done'
+                txn._changed_by = request.user
+                txn.save()
+                moved += 1
+        self.message_user(request, f"Moved {moved} to Done")
     mark_done.short_description = 'Set state: Done'
 
     def advance_state(self, request, queryset):

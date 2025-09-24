@@ -317,16 +317,16 @@ class Transaction(models.Model):
         issued_local = issued_dt.astimezone(tehran_tz)
         jalali_date = JalaliDateTime(issued_local).strftime('%Y%m%d')
 
-        # Calculate per-user-per-kind sequence for that Persian date using Tehran-local day bounds
-        start_local = issued_local.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_local = start_local + timedelta(days=1)
+        # Calculate per-user-per-prefix sequence for that Persian date to avoid collisions
+        # between different kinds that share the same prefix (e.g., both Profit kinds)
+        base_code = f"{prefix}-{user_part}-{jalali_date}-"
         seq = (
             type(self).objects
-            .filter(user_id=self.user_id, kind=self.kind, issued_at__gte=start_local, issued_at__lt=end_local)
+            .filter(transaction_code__startswith=base_code)
             .count()
             + 1
         )
-        return f"{prefix}-{user_part}-{jalali_date}-{seq:02d}"
+        return f"{base_code}{seq:02d}"
 
     def save(self, *args, **kwargs):
         """Override save to generate transaction code for new transactions and auto-apply done transactions"""
