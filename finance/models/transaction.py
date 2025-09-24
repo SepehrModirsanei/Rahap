@@ -306,7 +306,11 @@ class Transaction(models.Model):
         }
 
         prefix = kind_prefix_map.get(self.kind, 'Txn')
-        user_part = str(self.user_id or (self.user.id if self.user else '0'))
+        # Use 8-char UUID prefix assigned to each user
+        try:
+            user_part = (self.user.short_user_id if self.user else '00000000')
+        except Exception:
+            user_part = '00000000'
 
         tehran_tz = ZoneInfo('Asia/Tehran')
         issued_dt = self.issued_at or timezone.now()
