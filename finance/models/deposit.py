@@ -11,11 +11,13 @@ class Deposit(models.Model):
     initial_balance = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('موجودی اولیه'))
     # Profit rate interpretation depends on profit_kind (monthly/yearly)
     monthly_profit_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name=_('نرخ سود'))
-    # Profit kind: monthly or yearly (calculation remains daily, payout window differs)
+    # Profit kind: monthly, six-months (semiannual), or yearly (calculation remains daily, payout window differs)
     PROFIT_KIND_MONTHLY = 'monthly'
+    PROFIT_KIND_SEMIANNUAL = 'semiannual'
     PROFIT_KIND_YEARLY = 'yearly'
     PROFIT_KIND_CHOICES = [
         (PROFIT_KIND_MONTHLY, _('ماهانه')),
+        (PROFIT_KIND_SEMIANNUAL, _('شش‌ماهه')),
         (PROFIT_KIND_YEARLY, _('سالانه')),
     ]
     profit_kind = models.CharField(max_length=10, choices=PROFIT_KIND_CHOICES, default=PROFIT_KIND_MONTHLY, verbose_name=_('نوع سود'))
@@ -61,7 +63,12 @@ class Deposit(models.Model):
         if not self.monthly_profit_rate:
             return
         # Determine accrual window based on profit kind (still calculated daily)
-        window_days = 30 if self.profit_kind == self.PROFIT_KIND_MONTHLY else 365
+        if self.profit_kind == self.PROFIT_KIND_MONTHLY:
+            window_days = 30
+        elif self.profit_kind == self.PROFIT_KIND_SEMIANNUAL:
+            window_days = 180
+        else:
+            window_days = 365
         # Check if enough time has passed since last profit accrual
         if self.last_profit_accrual_at and (now - self.last_profit_accrual_at).days < window_days:
             return
@@ -157,10 +164,16 @@ class Deposit(models.Model):
         # Calculate next profit date
         next_profit_date = None
         try:
+            if self.profit_kind == self.PROFIT_KIND_MONTHLY:
+                days = 30
+            elif self.profit_kind == self.PROFIT_KIND_SEMIANNUAL:
+                days = 180
+            else:
+                days = 365
             if self.last_profit_accrual_at:
-                next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=(30 if self.profit_kind == self.PROFIT_KIND_MONTHLY else 365))
+                next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=days)
             elif self.created_at:
-                next_profit_date = self.created_at + timezone.timedelta(days=(30 if self.profit_kind == self.PROFIT_KIND_MONTHLY else 365))
+                next_profit_date = self.created_at + timezone.timedelta(days=days)
         except Exception:
             next_profit_date = None
         
