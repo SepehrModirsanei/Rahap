@@ -6,51 +6,15 @@ by different admin sites to reduce code duplication.
 """
 
 from django.contrib import admin
-from django.utils import timezone
-from django.utils.html import format_html
-from django.urls import reverse
-from django.utils.safestring import mark_safe
 from decimal import Decimal
 from ..models import User, Account, Deposit, Transaction, AccountDailyBalance
 from ..forms import TransactionAdminForm
-from .transaction_state_log_admin import TransactionStateLogInline
+from .inlines import AccountTxnOutInline, AccountTxnInInline, DepositTxnInInline, TransactionStateLogInline
+from .mixins import CommonDisplayMixin
 from ..utils import get_persian_date_display
 
 
-class BaseTransactionInline(admin.TabularInline):
-    """Base inline for transaction relationships"""
-    model = Transaction
-    extra = 0
-    can_delete = False
-    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
-    fields = readonly_fields
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-
-class AccountTxnOutInline(BaseTransactionInline):
-    """Inline for outgoing transactions from accounts"""
-    fk_name = 'source_account'
-    verbose_name = 'Outgoing Transactions'
-    verbose_name_plural = 'Outgoing Transactions'
-
-
-class AccountTxnInInline(BaseTransactionInline):
-    """Inline for incoming transactions to accounts"""
-    fk_name = 'destination_account'
-    verbose_name = 'Incoming Transactions'
-    verbose_name_plural = 'Incoming Transactions'
-
-
-class DepositTxnInInline(BaseTransactionInline):
-    """Inline for transactions to deposits"""
-    fk_name = 'destination_deposit'
-    verbose_name = 'Deposit Transactions'
-    verbose_name_plural = 'Deposit Transactions'
-
-
-class BaseAccountAdmin(admin.ModelAdmin):
+class BaseAccountAdmin(CommonDisplayMixin, admin.ModelAdmin):
     """Base admin class for Account model"""
     list_display = ('user', 'name', 'account_type', 'balance_display', 'monthly_profit_rate', 'created_at_display')
     list_filter = ('account_type', 'created_at')
@@ -70,18 +34,9 @@ class BaseAccountAdmin(admin.ModelAdmin):
         }),
     )
 
-    def balance_display(self, obj):
-        """Display account balance with formatting"""
-        return f"{obj.balance:,.2f}"
-    balance_display.short_description = 'موجودی'
-
-    def created_at_display(self, obj):
-        """Display Persian date for created_at"""
-        return get_persian_date_display(obj.created_at)
-    created_at_display.short_description = 'تاریخ ایجاد'
 
 
-class BaseDepositAdmin(admin.ModelAdmin):
+class BaseDepositAdmin(CommonDisplayMixin, admin.ModelAdmin):
     """Base admin class for Deposit model"""
     list_display = ('user', 'initial_balance', 'monthly_profit_rate', 'balance_display', 'created_at_display')
     list_filter = ('created_at',)
@@ -101,18 +56,9 @@ class BaseDepositAdmin(admin.ModelAdmin):
         }),
     )
 
-    def balance_display(self, obj):
-        """Display deposit balance with formatting"""
-        return f"{obj.balance:,.2f}"
-    balance_display.short_description = 'موجودی'
-
-    def created_at_display(self, obj):
-        """Display Persian date for created_at"""
-        return get_persian_date_display(obj.created_at)
-    created_at_display.short_description = 'تاریخ ایجاد'
 
 
-class BaseTransactionAdmin(admin.ModelAdmin):
+class BaseTransactionAdmin(CommonDisplayMixin, admin.ModelAdmin):
     """Base admin class for Transaction model"""
     form = TransactionAdminForm
     list_display = ('transaction_code', 'user', 'kind', 'amount', 'state', 'applied', 'created_at_display')
@@ -137,13 +83,9 @@ class BaseTransactionAdmin(admin.ModelAdmin):
         }),
     )
 
-    def created_at_display(self, obj):
-        """Display Persian date for created_at"""
-        return get_persian_date_display(obj.created_at)
-    created_at_display.short_description = 'تاریخ ایجاد'
 
 
-class BaseAccountDailyBalanceAdmin(admin.ModelAdmin):
+class BaseAccountDailyBalanceAdmin(CommonDisplayMixin, admin.ModelAdmin):
     """Base admin class for AccountDailyBalance model"""
     list_display = ('get_account_name', 'get_account_type', 'get_owner', 'get_persian_snapshot_date', 'balance_display', 'get_snapshot_total')
     list_filter = ('snapshot_date',)
@@ -155,10 +97,6 @@ class BaseAccountDailyBalanceAdmin(admin.ModelAdmin):
         }),
     )
 
-    def balance_display(self, obj):
-        """Display balance with formatting"""
-        return f"{obj.balance:,.2f}"
-    balance_display.short_description = 'موجودی'
 
     def get_owner(self, obj):
         try:
@@ -189,55 +127,5 @@ class BaseAccountDailyBalanceAdmin(admin.ModelAdmin):
     get_account_name.short_description = 'نام حساب'
 
 
-# Mixin classes for different permission levels
-class ReadOnlyMixin:
-    """Mixin for read-only admin classes"""
-    
-    def has_add_permission(self, request):
-        return False
-    
-    def has_change_permission(self, request, obj=None):
-        return False
-    
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-
-class TreasuryMixin:
-    """Mixin for treasury admin classes with full permissions"""
-    
-    def has_add_permission(self, request):
-        return request.user.is_superuser
-    
-    def has_change_permission(self, request, obj=None):
-        return request.user.is_superuser
-    
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
-
-
-class OperationMixin:
-    """Mixin for operation admin classes with limited permissions"""
-    
-    def has_add_permission(self, request):
-        return request.user.is_staff
-    
-    def has_change_permission(self, request, obj=None):
-        return request.user.is_staff
-    
-    def has_delete_permission(self, request, obj=None):
-        return False  # Operations staff cannot delete
-
-
-class AnalyticsMixin:
-    """Mixin for analytics admin classes with enhanced display"""
-    
-    def get_queryset(self, request):
-        """Override to add analytics-specific filtering"""
-        return super().get_queryset(request)
-    
-    def changelist_view(self, request, extra_context=None):
-        """Add analytics context to changelist"""
-        extra_context = extra_context or {}
-        extra_context['analytics_mode'] = True
-        return super().changelist_view(request, extra_context)
+# Import mixins from the dedicated mixins module
+from .mixins import ReadOnlyMixin, TreasuryMixin, OperationMixin, AnalyticsMixin

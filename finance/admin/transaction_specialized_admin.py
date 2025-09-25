@@ -12,10 +12,10 @@ from ..forms.specialized_forms import (
     WithdrawalRequestForm, CreditIncreaseForm, AccountTransferForm,
     ProfitTransactionForm, DepositTransactionForm
 )
-from .transaction_state_log_admin import TransactionStateLogInline
+from .inlines import TransactionStateLogInline
 
 
-class BaseTransactionAdmin(admin.ModelAdmin):
+class BaseSpecializedTransactionAdmin(admin.ModelAdmin):
     """Base admin class for all transaction types"""
     form = TransactionAdminForm
     
@@ -64,7 +64,7 @@ class BaseTransactionAdmin(admin.ModelAdmin):
 
 
 @admin.register(WithdrawalRequest)
-class WithdrawalRequestAdmin(BaseTransactionAdmin):
+class WithdrawalRequestAdmin(BaseSpecializedTransactionAdmin):
     """Admin for withdrawal request transactions"""
     form = WithdrawalRequestForm
     list_display = ('transaction_code', 'id', 'user', 'source_account', 'amount', 'state', 'applied', 'get_withdrawal_destination_display', 'get_receipt_display', 'get_persian_scheduled_for', 'get_persian_created_at')
@@ -77,7 +77,7 @@ class WithdrawalRequestAdmin(BaseTransactionAdmin):
 
 
 @admin.register(CreditIncrease)
-class CreditIncreaseAdmin(BaseTransactionAdmin):
+class CreditIncreaseAdmin(BaseSpecializedTransactionAdmin):
     """Admin for credit increase transactions"""
     form = CreditIncreaseForm
     list_display = ('transaction_code', 'id', 'user', 'destination_account', 'amount', 'state', 'applied', 'get_receipt_display', 'get_persian_scheduled_for', 'get_persian_created_at')
@@ -90,7 +90,7 @@ class CreditIncreaseAdmin(BaseTransactionAdmin):
 
 
 @admin.register(AccountTransfer)
-class AccountTransferAdmin(BaseTransactionAdmin):
+class AccountTransferAdmin(BaseSpecializedTransactionAdmin):
     """Admin for account-to-account transfer transactions"""
     form = AccountTransferForm
     list_display = ('transaction_code', 'id', 'user', 'source_account', 'destination_account', 'amount', 'exchange_rate', 'state', 'applied', 'get_persian_created_at')
@@ -103,7 +103,7 @@ class AccountTransferAdmin(BaseTransactionAdmin):
 
 
 @admin.register(ProfitTransaction)
-class ProfitTransactionAdmin(BaseTransactionAdmin):
+class ProfitTransactionAdmin(BaseSpecializedTransactionAdmin):
     """Admin for profit-related transactions"""
     form = ProfitTransactionForm
     list_display = ('transaction_code', 'id', 'user', 'destination_account', 'amount', 'state', 'applied', 'get_persian_created_at')
@@ -121,7 +121,7 @@ class ProfitTransactionAdmin(BaseTransactionAdmin):
 
 
 @admin.register(DepositTransaction)
-class DepositTransactionAdmin(BaseTransactionAdmin):
+class DepositTransactionAdmin(BaseSpecializedTransactionAdmin):
     """Admin for account-to-deposit transactions"""
     form = DepositTransactionForm
     list_display = ('transaction_code', 'id', 'user', 'source_account', 'destination_deposit', 'amount', 'state', 'applied', 'get_persian_created_at')

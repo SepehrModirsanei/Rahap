@@ -6,7 +6,8 @@ This module contains admin classes for supervisor/oversight functionality.
 
 from django.contrib import admin
 from ..models import Account, Deposit
-from .base import ReadOnlyMixin, BaseAccountAdmin, BaseDepositAdmin
+from .base import BaseAccountAdmin, BaseDepositAdmin
+from .mixins import ReadOnlyMixin
 from ..utils import get_persian_date_display
 
 

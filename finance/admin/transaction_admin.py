@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from ..models import Transaction
 from ..forms import TransactionAdminForm
-from .transaction_state_log_admin import TransactionStateLogInline
+from .inlines import TransactionStateLogInline
 
 
 @admin.register(Transaction)

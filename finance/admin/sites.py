@@ -1,23 +1,20 @@
 """
 Admin Site Configurations
 
-This module contains all admin site configurations using the base classes
+This module contains all admin site configurations using dynamic class creation
 to eliminate duplication and provide consistent functionality.
 """
 
 from django.contrib import admin
 from django.contrib.admin import AdminSite
-from django.urls import path
-from django.utils import timezone
-from django.template.response import TemplateResponse
-from django.db.models import Sum
 from .base import (
-    BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin,
-    ReadOnlyMixin, TreasuryMixin, OperationMixin, AnalyticsMixin
+    BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin
 )
+from .mixins import ReadOnlyMixin, TreasuryMixin, OperationMixin
 from .user_admin import UserAdmin
 from .account_admin import AccountAdmin
-from ..models import User, Account, Deposit, Transaction, AccountDailyBalance, TransactionStateLog
+from .analytics import analytics_admin_site
+from ..models import User, Account, Deposit, Transaction, AccountDailyBalance, DepositDailyBalance, TransactionStateLog
 from ..models.transaction_proxies import (
     WithdrawalRequest, CreditIncrease, AccountTransfer, 
     ProfitTransaction, DepositTransaction
@@ -29,175 +26,6 @@ from .transaction_specialized_admin import (
 )
 
 
-# Treasury Admin Site - Full Financial Control
-class TreasuryUserAdmin(TreasuryMixin, UserAdmin):
-    """Treasury user admin with full permissions and inlines"""
-    pass
-
-
-class TreasuryAccountAdmin(TreasuryMixin, AccountAdmin):
-    """Treasury account admin with full permissions and enhanced profit calculation fields"""
-    pass
-
-
-class TreasuryDepositAdmin(TreasuryMixin, BaseDepositAdmin):
-    """Treasury deposit admin with full permissions"""
-    pass
-
-
-class TreasuryTransactionAdmin(TreasuryMixin, BaseTransactionAdmin):
-    """Treasury transaction admin with full permissions"""
-    pass
-
-
-class TreasuryAccountDailyBalanceAdmin(TreasuryMixin, BaseAccountDailyBalanceAdmin):
-    """Treasury account daily balance admin with full permissions"""
-    pass
-
-
-# Operation Admin Site - Daily Operations
-class OperationUserAdmin(OperationMixin, UserAdmin):
-    """Operation user admin with limited permissions and inlines"""
-    pass
-
-
-class OperationAccountAdmin(OperationMixin, AccountAdmin):
-    """Operation account admin with limited permissions and enhanced profit calculation fields"""
-    pass
-
-
-class OperationDepositAdmin(OperationMixin, BaseDepositAdmin):
-    """Operation deposit admin with limited permissions"""
-    pass
-
-
-class OperationTransactionAdmin(OperationMixin, BaseTransactionAdmin):
-    """Operation transaction admin with limited permissions"""
-    pass
-
-
-class OperationAccountDailyBalanceAdmin(OperationMixin, BaseAccountDailyBalanceAdmin):
-    """Operation account daily balance admin with limited permissions"""
-    pass
-
-
-# Read-Only Admin Site 1 - Financial Overview
-class ReadOnlyUserAdmin(ReadOnlyMixin, UserAdmin):
-    """Read-only user admin for financial overview with inlines"""
-    pass
-
-
-class ReadOnlyAccountAdmin(ReadOnlyMixin, AccountAdmin):
-    """Read-only account admin for financial overview with enhanced profit calculation fields"""
-    pass
-
-
-class ReadOnlyDepositAdmin(ReadOnlyMixin, BaseDepositAdmin):
-    """Read-only deposit admin for financial overview"""
-    pass
-
-
-class ReadOnlyTransactionAdmin(ReadOnlyMixin, BaseTransactionAdmin):
-    """Read-only transaction admin for financial overview"""
-    pass
-
-
-class ReadOnlyAccountDailyBalanceAdmin(ReadOnlyMixin, BaseAccountDailyBalanceAdmin):
-    """Read-only account daily balance admin for financial overview"""
-    pass
-
-
-# Read-Only Admin Site 2 - Analytics & Reporting
-class AnalyticsUserAdmin(AnalyticsMixin, ReadOnlyMixin, UserAdmin):
-    """Analytics user admin with enhanced display and inlines"""
-    list_display = UserAdmin.list_display + ('account_count', 'transaction_count')
-    
-    def account_count(self, obj):
-        """Display number of accounts for user"""
-        return obj.accounts.count()
-    account_count.short_description = 'تعداد حساب‌ها'
-    
-    def transaction_count(self, obj):
-        """Display number of transactions for user"""
-        return obj.transactions.count()
-    transaction_count.short_description = 'تعداد تراکنش‌ها'
-
-
-class AnalyticsAccountAdmin(AnalyticsMixin, ReadOnlyMixin, AccountAdmin):
-    """Analytics account admin with enhanced display and profit calculation fields"""
-    list_display = AccountAdmin.list_display + ('transaction_count', 'profit_earned')
-    
-    def transaction_count(self, obj):
-        """Display number of transactions for account"""
-        return obj.incoming_account_transactions.count() + obj.outgoing_account_transactions.count()
-    transaction_count.short_description = 'تعداد تراکنش‌ها'
-    
-    def profit_earned(self, obj):
-        """Display total profit earned"""
-        profit_txns = obj.incoming_account_transactions.filter(
-            kind__in=[Transaction.KIND_PROFIT_ACCOUNT, Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT]
-        )
-        total_profit = sum(txn.amount for txn in profit_txns)
-        return f"{total_profit:,.2f}"
-    profit_earned.short_description = 'سود کسب شده'
-
-
-class AnalyticsDepositAdmin(AnalyticsMixin, ReadOnlyMixin, BaseDepositAdmin):
-    """Analytics deposit admin with enhanced display"""
-    list_display = BaseDepositAdmin.list_display + ('profit_generated', 'transaction_count')
-    
-    def profit_generated(self, obj):
-        """Display total profit generated by deposit"""
-        profit_txns = obj.incoming_deposit_transactions.filter(
-            kind=Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT
-        )
-        total_profit = sum(txn.amount for txn in profit_txns)
-        return f"{total_profit:,.2f}"
-    profit_generated.short_description = 'سود تولید شده'
-    
-    def transaction_count(self, obj):
-        """Display number of transactions for deposit"""
-        return obj.incoming_deposit_transactions.count()
-    transaction_count.short_description = 'تعداد تراکنش‌ها'
-
-
-class AnalyticsTransactionAdmin(AnalyticsMixin, ReadOnlyMixin, BaseTransactionAdmin):
-    """Analytics transaction admin with enhanced display"""
-    list_display = BaseTransactionAdmin.list_display + ('profit_type', 'cross_currency')
-    
-    def profit_type(self, obj):
-        """Display if transaction is profit-related"""
-        if obj.kind in [Transaction.KIND_PROFIT_ACCOUNT, Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT]:
-            return "سود"
-        return "عادی"
-    profit_type.short_description = 'نوع تراکنش'
-    
-    def cross_currency(self, obj):
-        """Display if transaction is cross-currency"""
-        if obj.source_account and obj.destination_account:
-            return obj.source_account.account_type != obj.destination_account.account_type
-        return False
-    cross_currency.short_description = 'ارز متقابل'
-    cross_currency.boolean = True
-
-
-class AnalyticsAccountDailyBalanceAdmin(AnalyticsMixin, ReadOnlyMixin, BaseAccountDailyBalanceAdmin):
-    """Analytics account daily balance admin with enhanced display"""
-    list_display = BaseAccountDailyBalanceAdmin.list_display + ('balance_change', 'trend')
-    
-    def balance_change(self, obj):
-        """Display balance change from previous day"""
-        # This would need to be implemented with proper logic
-        return "N/A"
-    balance_change.short_description = 'تغییر موجودی'
-    
-    def trend(self, obj):
-        """Display balance trend"""
-        # This would need to be implemented with proper logic
-        return "N/A"
-    trend.short_description = 'روند'
-
-
 # Create admin sites
 class TreasuryAdminSite(AdminSite):
     site_header = "مدیریت خزانه‌داری"
@@ -207,12 +35,12 @@ class TreasuryAdminSite(AdminSite):
 
 treasury_admin_site = TreasuryAdminSite(name='treasury_admin')
 
-# Register Treasury Admin
-treasury_admin_site.register(User, TreasuryUserAdmin)
-treasury_admin_site.register(Account, TreasuryAccountAdmin)
-treasury_admin_site.register(Deposit, TreasuryDepositAdmin)
-treasury_admin_site.register(Transaction, TreasuryTransactionAdmin)
-treasury_admin_site.register(AccountDailyBalance, TreasuryAccountDailyBalanceAdmin)
+# Register Treasury Admin with TreasuryMixin applied dynamically
+treasury_admin_site.register(User, type('TreasuryUserAdmin', (TreasuryMixin, UserAdmin), {}))
+treasury_admin_site.register(Account, type('TreasuryAccountAdmin', (TreasuryMixin, AccountAdmin), {}))
+treasury_admin_site.register(Deposit, type('TreasuryDepositAdmin', (TreasuryMixin, BaseDepositAdmin), {}))
+treasury_admin_site.register(Transaction, type('TreasuryTransactionAdmin', (TreasuryMixin, BaseTransactionAdmin), {}))
+treasury_admin_site.register(AccountDailyBalance, type('TreasuryAccountDailyBalanceAdmin', (TreasuryMixin, BaseAccountDailyBalanceAdmin), {}))
 treasury_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
 
 # Register Specialized Transaction Admin Classes
@@ -231,12 +59,12 @@ class OperationAdminSite(AdminSite):
 
 operation_admin_site = OperationAdminSite(name='operation_admin')
 
-# Register Operation Admin
-operation_admin_site.register(User, OperationUserAdmin)
-operation_admin_site.register(Account, OperationAccountAdmin)
-operation_admin_site.register(Deposit, OperationDepositAdmin)
-operation_admin_site.register(Transaction, OperationTransactionAdmin)
-operation_admin_site.register(AccountDailyBalance, OperationAccountDailyBalanceAdmin)
+# Register Operation Admin with OperationMixin applied dynamically
+operation_admin_site.register(User, type('OperationUserAdmin', (OperationMixin, UserAdmin), {}))
+operation_admin_site.register(Account, type('OperationAccountAdmin', (OperationMixin, AccountAdmin), {}))
+operation_admin_site.register(Deposit, type('OperationDepositAdmin', (OperationMixin, BaseDepositAdmin), {}))
+operation_admin_site.register(Transaction, type('OperationTransactionAdmin', (OperationMixin, BaseTransactionAdmin), {}))
+operation_admin_site.register(AccountDailyBalance, type('OperationAccountDailyBalanceAdmin', (OperationMixin, BaseAccountDailyBalanceAdmin), {}))
 operation_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
 
 # Register Specialized Transaction Admin Classes
@@ -247,139 +75,11 @@ operation_admin_site.register(ProfitTransaction, ProfitTransactionAdmin)
 operation_admin_site.register(DepositTransaction, DepositTransactionAdmin)
 
 
-class ReadOnlyAdminSite1(AdminSite):
-    site_header = "نمای کلی مالی (فقط خواندن)"
-    site_title = "نمای کلی مالی"
-    index_title = "نمایش داده‌های مالی"
-    site_url = "/admin/financial-overview/"
+# Financial Overview is now handled by supervisor.py
+# Use supervisor admin classes for financial overview functionality
 
-readonly_admin_site_1 = ReadOnlyAdminSite1(name='readonly_admin_1')
+# Use the analytics admin site from analytics.py which has the custom dashboard
+# Analytics admin site is already created and registered in analytics.py
 
-# Register Read-Only Admin 1
-readonly_admin_site_1.register(User, ReadOnlyUserAdmin)
-readonly_admin_site_1.register(Account, ReadOnlyAccountAdmin)
-readonly_admin_site_1.register(Deposit, ReadOnlyDepositAdmin)
-readonly_admin_site_1.register(Transaction, ReadOnlyTransactionAdmin)
-readonly_admin_site_1.register(AccountDailyBalance, ReadOnlyAccountDailyBalanceAdmin)
-
-
-class ReadOnlyAdminSite2(AdminSite):
-    site_header = "تحلیل و گزارش‌گیری (فقط خواندن)"
-    site_title = "مدیریت تحلیل"
-    index_title = "تحلیل و گزارش‌گیری مالی"
-    site_url = "/admin/analytics/"
-
-readonly_admin_site_2 = ReadOnlyAdminSite2(name='readonly_admin_2')
-
-# Simple analytics dashboard view
-def _build_analytics_context(request):
-    from ..models import Account, Deposit, Transaction
-    from decimal import Decimal
-    today = timezone.localdate()
-    tomorrow = today + timezone.timedelta(days=1)
-
-    # Account totals by type (sum of current balances)
-    def sum_accounts_by_type(acc_type):
-        total = Decimal('0')
-        for acc in Account.objects.filter(account_type=acc_type):
-            total += Decimal(acc.balance)
-        return total
-
-    totals = {
-        'usd_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_USD),
-        'eur_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_EUR),
-        'gbp_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_GBP),
-        'gold_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_GOLD),
-        'rial_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_RIAL),
-    }
-
-    # Rial deposits total (sum of deposit balances)
-    dep_total = Decimal('0')
-    for d in Deposit.objects.all():
-        dep_total += Decimal(d.balance)
-    totals['rial_deposits_total'] = dep_total
-
-    # Profit due tomorrow: deposits whose next profit date == tomorrow
-    # Using deposit logic: based on profit_kind windows
-    def next_profit_date(deposit):
-        if deposit.profit_kind == deposit.PROFIT_KIND_MONTHLY:
-            days = 30
-        elif deposit.profit_kind == deposit.PROFIT_KIND_SEMIANNUAL:
-            days = 180
-        else:
-            days = 365
-        base = deposit.last_profit_accrual_at or deposit.created_at
-        if not base:
-            return None
-        return (base + timezone.timedelta(days=days)).date()
-
-    profit_due_tomorrow = 0
-    for d in Deposit.objects.all():
-        nd = next_profit_date(d)
-        if nd == tomorrow:
-            # Approximation: show computed period profit preview as 0 (expensive to compute live)
-            profit_due_tomorrow += 0
-    totals['profit_due_tomorrow'] = profit_due_tomorrow
-
-    # Profit transferred today: sum of applied profit transactions created today
-    profit_today = Transaction.objects.filter(
-        kind__in=[Transaction.KIND_PROFIT_ACCOUNT, Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT],
-        applied=True,
-        created_at__date=today,
-    ).aggregate(total_amount=Sum('amount'))['total_amount'] or Decimal('0')
-    totals['profit_transferred_today'] = profit_today
-
-    # Credit increase today/yesterday
-    credit_today = Transaction.objects.filter(
-        kind=Transaction.KIND_CREDIT_INCREASE,
-        applied=True,
-        created_at__date=today,
-    ).aggregate(total_amount=Sum('amount'))['total_amount'] or Decimal('0')
-    credit_yesterday = Transaction.objects.filter(
-        kind=Transaction.KIND_CREDIT_INCREASE,
-        applied=True,
-        created_at__date=today - timezone.timedelta(days=1),
-    ).aggregate(total_amount=Sum('amount'))['total_amount'] or Decimal('0')
-    totals['credit_increase_today'] = credit_today
-    totals['credit_increase_yesterday'] = credit_yesterday
-
-    context = {
-        'totals': totals,
-        'title': 'داشبورد تحلیل',
-        'site_header': 'تحلیل و گزارش‌گیری (فقط خواندن)',
-    }
-    return context
-
-
-def analytics_dashboard(request):
-    context = _build_analytics_context(request)
-    context.update({'request': request, 'has_permission': True})
-    return TemplateResponse(request, 'admin/analytics_dashboard.html', context)
-
-
-# Override index of readonly analytics site to show dashboard at root (/admin/analytics/)
-def _readonly2_index(self, request, extra_context=None):
-    context = _build_analytics_context(request)
-    context.update(self.each_context(request))
-    if extra_context:
-        context.update(extra_context)
-    return TemplateResponse(request, 'admin/analytics_dashboard.html', context)
-
-ReadOnlyAdminSite2.index = _readonly2_index
-
-
-def get_analytics_urls(urls):
-    info = [
-        path('analytics/', analytics_dashboard, name='analytics-dashboard'),
-    ]
-    return info + urls
-
-# Attach custom URLs to the main admin site and the analytics site
-admin.site.get_urls = (lambda orig=admin.site.get_urls: (lambda: get_analytics_urls(orig())) )()
-
-# Register Read-Only Admin 2
-readonly_admin_site_2.register(User, AnalyticsUserAdmin)
-readonly_admin_site_2.register(Account, AnalyticsAccountAdmin)
-readonly_admin_site_2.register(Deposit, AnalyticsDepositAdmin)
-readonly_admin_site_2.register(Transaction, AnalyticsTransactionAdmin)
-readonly_admin_site_2.register(AccountDailyBalance, AnalyticsAccountDailyBalanceAdmin)
+# For backward compatibility
+readonly_admin_site_2 = analytics_admin_site

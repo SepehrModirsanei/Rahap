@@ -1,87 +1,10 @@
 from django.contrib import admin
-from django.contrib.admin import SimpleListFilter
 from ..models import TransactionStateLog
+from .inlines import TransactionStateLogInline
+from .filters import FromStatePersianFilter, ToStatePersianFilter
 
 
-class TransactionStateLogInline(admin.TabularInline):
-    model = TransactionStateLog
-    extra = 0
-    can_delete = False
-    readonly_fields = ('get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'get_from_state_persian', 'get_to_state_persian', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at', 'notes')
-    fields = readonly_fields
-
-    def get_transaction_code(self, obj):
-        """Display transaction code"""
-        if obj.transaction:
-            return obj.transaction.transaction_code
-        return '-'
-    get_transaction_code.short_description = 'کد تراکنش'
-
-    def get_transaction_kind_persian(self, obj):
-        """Display Persian transaction kind"""
-        if obj.transaction:
-            return obj.transaction.get_kind_display()
-        return '-'
-    get_transaction_kind_persian.short_description = 'نوع تراکنش'
-
-    def get_transaction_amount(self, obj):
-        """Display transaction amount"""
-        if obj.transaction:
-            return f"{obj.transaction.amount:,.2f}"
-        return '-'
-    get_transaction_amount.short_description = 'مبلغ'
-
-    def get_exchange_rate(self, obj):
-        """Display exchange rate"""
-        if obj.transaction:
-            if obj.transaction.kind == obj.transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
-                if obj.transaction.exchange_rate:
-                    return f"{obj.transaction.exchange_rate:,.6f}"
-                else:
-                    return "1.000000"  # Default for same currency
-            else:
-                return "-"  # Not applicable for other transaction types
-        return '-'
-    get_exchange_rate.short_description = 'نرخ تبدیل'
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-
-class FromStatePersianFilter(SimpleListFilter):
-    title = 'از وضعیت'
-    parameter_name = 'from_state'
-
-    def lookups(self, request, model_admin):
-        from ..models.transaction import Transaction
-        return [(key, label) for key, label in Transaction.STATE_CHOICES]
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value:
-            return queryset.filter(from_state=value)
-        return queryset
-
-
-class ToStatePersianFilter(SimpleListFilter):
-    title = 'به وضعیت'
-    parameter_name = 'to_state'
-
-    def lookups(self, request, model_admin):
-        from ..models.transaction import Transaction
-        return [(key, label) for key, label in Transaction.STATE_CHOICES]
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value:
-            return queryset.filter(to_state=value)
-        return queryset
+# All filter classes are now imported from filters.py
 
 
 @admin.register(TransactionStateLog)

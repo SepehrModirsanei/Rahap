@@ -5,29 +5,15 @@ from django.db.models import Avg
 from ..models import Account, Transaction, AccountDailyBalance
 from .filters import ProfitCalculationFilter
 from ..utils import get_persian_date_display
+from .inlines import AccountTxnOutInline, AccountTxnInInline
+from .mixins import ProfitAccrualMixin, SnapshotMixin
 
 
-class ReadOnlyTransactionInline(admin.TabularInline):
-    model = Transaction
-    extra = 0
-    can_delete = False
-    readonly_fields = ('transaction_code', 'user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
-    fields = readonly_fields
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-
-class AccountTxnOutInline(ReadOnlyTransactionInline):
-    fk_name = 'source_account'
-
-
-class AccountTxnInInline(ReadOnlyTransactionInline):
-    fk_name = 'destination_account'
+# All inline classes are now imported from inlines.py
 
 
 @admin.register(Account)
-class AccountAdmin(admin.ModelAdmin):
+class AccountAdmin(ProfitAccrualMixin, SnapshotMixin, admin.ModelAdmin):
     list_display = ('id', 'user', 'name', 'get_kind', 'get_unit', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'get_snapshot_count', 'get_persian_created_at', 'get_profit_start_date', 'get_next_profit_date', 'get_average_balance')
     list_filter = ('account_type', ProfitCalculationFilter)
     search_fields = ('user__username', 'name')
@@ -48,34 +34,11 @@ class AccountAdmin(admin.ModelAdmin):
     )
     readonly_fields = ('get_profit_start_date', 'get_next_profit_date', 'get_average_balance')
 
-    def accrue_profit_now(self, request, queryset):
-        count = 0
-        for account in queryset:
-            before = account.balance
-            account.accrue_monthly_profit()
-            if account.balance != before:
-                count += 1
-        self.message_user(request, f"سود برای {count} حساب محاسبه شد")
-    accrue_profit_now.short_description = 'محاسبه سود فوری برای حساب‌های انتخاب شده'
-
     def balance_display(self, obj):
         """Display the current balance of the account"""
         return f"${obj.balance:,.2f}"
     balance_display.short_description = 'موجودی فعلی'
     balance_display.admin_order_field = 'balance'
-
-    def snapshot_today(self, request, queryset):
-        today = timezone.now().date()
-        created = 0
-        for acc in queryset:
-            obj, was_created = AccountDailyBalance.objects.get_or_create(
-                account=acc, snapshot_date=today,
-                defaults={'balance': Decimal(acc.balance)}
-            )
-            if was_created:
-                created += 1
-        self.message_user(request, f"{created} تصویر روزانه برای امروز ایجاد شد")
-    snapshot_today.short_description = 'ایجاد تصویر روزانه برای حساب‌های انتخاب شده'
 
     def get_profit_start_date(self, obj):
         """Display when profit calculation started for this account"""

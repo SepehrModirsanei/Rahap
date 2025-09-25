@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from ..models import User
-from .user_inlines import AccountInline, DepositInline, TransactionInline
+from .inlines import AccountInline, DepositInline, TransactionInline
 
 
 @admin.register(User)

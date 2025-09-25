@@ -1,8 +1,119 @@
+"""
+Admin Inline Classes
+
+This module contains all inline admin classes for the finance application.
+Inlines are used to display related objects within other admin pages.
+"""
+
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from ..models import User, Account, Deposit, Transaction
+from ..models import Account, Deposit, Transaction, TransactionStateLog
+from ..utils import get_persian_date_display
+
+
+class BaseTransactionInline(admin.TabularInline):
+    """Base inline for transaction relationships"""
+    model = Transaction
+    extra = 0
+    can_delete = False
+    readonly_fields = ('user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'created_at')
+    fields = readonly_fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class ReadOnlyTransactionInline(admin.TabularInline):
+    """Read-only inline for transaction relationships"""
+    model = Transaction
+    extra = 0
+    can_delete = False
+    readonly_fields = ('transaction_code', 'user', 'kind', 'amount', 'exchange_rate', 'source_account', 'destination_account', 'destination_deposit', 'applied', 'get_persian_created_at')
+    fields = readonly_fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class AccountTxnOutInline(BaseTransactionInline):
+    """Inline for outgoing transactions from accounts"""
+    fk_name = 'source_account'
+    verbose_name = 'Outgoing Transactions'
+    verbose_name_plural = 'Outgoing Transactions'
+
+
+class AccountTxnInInline(BaseTransactionInline):
+    """Inline for incoming transactions to accounts"""
+    fk_name = 'destination_account'
+    verbose_name = 'Incoming Transactions'
+    verbose_name_plural = 'Incoming Transactions'
+
+
+class DepositTxnInInline(BaseTransactionInline):
+    """Inline for transactions to deposits"""
+    fk_name = 'destination_deposit'
+    verbose_name = 'Deposit Transactions'
+    verbose_name_plural = 'Deposit Transactions'
+
+
+class TransactionStateLogInline(admin.TabularInline):
+    """Inline for transaction state logs"""
+    model = TransactionStateLog
+    extra = 0
+    can_delete = False
+    readonly_fields = ('get_transaction_code', 'get_transaction_kind_persian', 'get_transaction_amount', 'get_exchange_rate', 'get_from_state_persian', 'get_to_state_persian', 'changed_by', 'get_persian_created_at', 'get_persian_changed_at', 'notes')
+    fields = readonly_fields
+
+    def get_transaction_code(self, obj):
+        """Display transaction code"""
+        if obj.transaction:
+            return obj.transaction.transaction_code
+        return '-'
+    get_transaction_code.short_description = 'کد تراکنش'
+
+    def get_transaction_kind_persian(self, obj):
+        """Display Persian transaction kind"""
+        if obj.transaction:
+            return obj.transaction.get_kind_display()
+        return '-'
+    get_transaction_kind_persian.short_description = 'نوع تراکنش'
+
+    def get_transaction_amount(self, obj):
+        """Display transaction amount"""
+        if obj.transaction:
+            return f"{obj.transaction.amount:,.2f}"
+        return '-'
+    get_transaction_amount.short_description = 'مبلغ'
+
+    def get_exchange_rate(self, obj):
+        """Display exchange rate"""
+        if obj.transaction:
+            if obj.transaction.kind == obj.transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
+                if obj.transaction.exchange_rate:
+                    return f"{obj.transaction.exchange_rate:,.6f}"
+                else:
+                    return "1.000000"  # Default for same currency
+            else:
+                return "-"  # Not applicable for other transaction types
+        return '-'
+    get_exchange_rate.short_description = 'نرخ تبدیل'
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class AccountInline(admin.TabularInline):
@@ -120,7 +231,8 @@ class TransactionInline(admin.TabularInline):
             'waiting_treasury': 'orange',
             'waiting_sandogh': 'blue',
             'verified_khazanedar': 'purple',
-            'cancelled': 'red'
+            'rejected': 'red',
+            'waiting_finance_manager': 'brown'
         }
         
         color = state_colors.get(obj.state, 'black')
@@ -143,24 +255,3 @@ class TransactionInline(admin.TabularInline):
         return False
 
 
-class UserAccountSummaryInline(admin.StackedInline):
-    """Summary inline showing account and deposit totals"""
-    model = Account  # Use Account as the model but show summary
-    template = 'admin/user_account_summary.html'
-    extra = 0
-    max_num = 0  # Don't show any instances
-    can_delete = False
-    
-    fields = ()  # We'll use custom template
-    
-    def get_queryset(self, request):
-        return Account.objects.none()  # Don't show any accounts
-    
-    def has_add_permission(self, request, obj=None):
-        return False
-    
-    def has_change_permission(self, request, obj=None):
-        return False
-    
-    def has_delete_permission(self, request, obj=None):
-        return False
