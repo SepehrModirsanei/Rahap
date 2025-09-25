@@ -107,7 +107,7 @@ class TreasuryTransactionAdmin(admin.ModelAdmin):
     list_display = ('transaction_code', 'id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'get_persian_scheduled_for', 'get_persian_created_at')
     list_filter = ('kind', 'state', 'applied', 'scheduled_for', 'created_at')
     search_fields = ('user__username',)
-    actions = ['advance_state', 'mark_waiting_sandogh', 'mark_verified_khazanedar', 'mark_done', 'apply_transactions', 'revert_transactions', 'bulk_schedule']
+    actions = ['advance_state', 'mark_waiting_sandogh', 'mark_verified_khazanedar', 'mark_done', 'mark_rejected', 'mark_waiting_finance_manager', 'apply_transactions', 'revert_transactions', 'bulk_schedule']
     form = TransactionAdminForm
     inlines = [TransactionStateLogInline]
     date_hierarchy = 'created_at'
@@ -169,6 +169,28 @@ class TreasuryTransactionAdmin(admin.ModelAdmin):
                 moved += 1
         self.message_user(request, f"Moved {moved} to Done")
     mark_done.short_description = 'Set state: Done'
+
+    def mark_rejected(self, request, queryset):
+        moved = 0
+        for txn in queryset:
+            if txn.state != 'rejected':
+                txn.state = 'rejected'
+                txn._changed_by = request.user
+                txn.save()
+                moved += 1
+        self.message_user(request, f"Moved {moved} to Rejected")
+    mark_rejected.short_description = 'Set state: Rejected'
+
+    def mark_waiting_finance_manager(self, request, queryset):
+        moved = 0
+        for txn in queryset:
+            if txn.state != 'waiting_finance_manager':
+                txn.state = 'waiting_finance_manager'
+                txn._changed_by = request.user
+                txn.save()
+                moved += 1
+        self.message_user(request, f"Moved {moved} to Waiting for Finance Manager")
+    mark_waiting_finance_manager.short_description = 'Set state: Waiting for Finance Manager'
 
     def advance_state(self, request, queryset):
         moved = 0
