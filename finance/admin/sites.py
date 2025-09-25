@@ -10,6 +10,7 @@ from django.contrib.admin import AdminSite
 from django.urls import path
 from django.utils import timezone
 from django.template.response import TemplateResponse
+from django.db.models import Sum
 from .base import (
     BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin,
     ReadOnlyMixin, TreasuryMixin, OperationMixin, AnalyticsMixin
@@ -271,7 +272,7 @@ class ReadOnlyAdminSite2(AdminSite):
 readonly_admin_site_2 = ReadOnlyAdminSite2(name='readonly_admin_2')
 
 # Simple analytics dashboard view
-def analytics_dashboard(request):
+def _build_analytics_context(request):
     from ..models import Account, Deposit, Transaction
     from decimal import Decimal
     today = timezone.localdate()
@@ -325,7 +326,7 @@ def analytics_dashboard(request):
         kind__in=[Transaction.KIND_PROFIT_ACCOUNT, Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT],
         applied=True,
         created_at__date=today,
-    ).aggregate(total_amount=admin.models.Sum('amount'))['total_amount'] or Decimal('0')
+    ).aggregate(total_amount=Sum('amount'))['total_amount'] or Decimal('0')
     totals['profit_transferred_today'] = profit_today
 
     # Credit increase today/yesterday
@@ -333,23 +334,38 @@ def analytics_dashboard(request):
         kind=Transaction.KIND_CREDIT_INCREASE,
         applied=True,
         created_at__date=today,
-    ).aggregate(total_amount=admin.models.Sum('amount'))['total_amount'] or Decimal('0')
+    ).aggregate(total_amount=Sum('amount'))['total_amount'] or Decimal('0')
     credit_yesterday = Transaction.objects.filter(
         kind=Transaction.KIND_CREDIT_INCREASE,
         applied=True,
         created_at__date=today - timezone.timedelta(days=1),
-    ).aggregate(total_amount=admin.models.Sum('amount'))['total_amount'] or Decimal('0')
+    ).aggregate(total_amount=Sum('amount'))['total_amount'] or Decimal('0')
     totals['credit_increase_today'] = credit_today
     totals['credit_increase_yesterday'] = credit_yesterday
 
-    context = dict(
-        request=request,
-        totals=totals,
-        title='داشبورد تحلیل',
-        site_header='تحلیل و گزارش‌گیری (فقط خواندن)',
-        has_permission=True,
-    )
+    context = {
+        'totals': totals,
+        'title': 'داشبورد تحلیل',
+        'site_header': 'تحلیل و گزارش‌گیری (فقط خواندن)',
+    }
+    return context
+
+
+def analytics_dashboard(request):
+    context = _build_analytics_context(request)
+    context.update({'request': request, 'has_permission': True})
     return TemplateResponse(request, 'admin/analytics_dashboard.html', context)
+
+
+# Override index of readonly analytics site to show dashboard at root (/admin/analytics/)
+def _readonly2_index(self, request, extra_context=None):
+    context = _build_analytics_context(request)
+    context.update(self.each_context(request))
+    if extra_context:
+        context.update(extra_context)
+    return TemplateResponse(request, 'admin/analytics_dashboard.html', context)
+
+ReadOnlyAdminSite2.index = _readonly2_index
 
 
 def get_analytics_urls(urls):
@@ -360,7 +376,6 @@ def get_analytics_urls(urls):
 
 # Attach custom URLs to the main admin site and the analytics site
 admin.site.get_urls = (lambda orig=admin.site.get_urls: (lambda: get_analytics_urls(orig())) )()
-readonly_admin_site_2.get_urls = (lambda orig=readonly_admin_site_2.get_urls: (lambda: get_analytics_urls(orig())) )()
 
 # Register Read-Only Admin 2
 readonly_admin_site_2.register(User, AnalyticsUserAdmin)
