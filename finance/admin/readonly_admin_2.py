@@ -55,7 +55,7 @@ class AnalyticsUserAdmin(admin.ModelAdmin):
 
 
 class AnalyticsAccountAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'name', 'account_type', 'balance', 'monthly_profit_rate', 'last_profit_accrual_at')
+    list_display = ('id', 'user', 'name', 'account_type', 'balance', 'monthly_profit_rate', 'last_profit_accrual_at', 'get_snapshot_count')
     list_filter = ('account_type', 'monthly_profit_rate')
     search_fields = ('user__username', 'name')
     inlines = [AccountTxnOutInline, AccountTxnInInline]
@@ -83,7 +83,7 @@ class AnalyticsAccountAdmin(admin.ModelAdmin):
 
 
 class AnalyticsDepositAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'last_profit_accrual_at')
+    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'last_profit_accrual_at', 'get_snapshot_count')
     search_fields = ('user__username',)
     list_filter = ('monthly_profit_rate', 'created_at')
     inlines = [DepositTxnInInline]
@@ -140,7 +140,7 @@ class AnalyticsTransactionAdmin(admin.ModelAdmin):
 
 
 class AnalyticsAccountDailyBalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'account', 'snapshot_date', 'balance')
+    list_display = ('id', 'account', 'get_owner', 'snapshot_date', 'balance', 'snapshot_number')
     list_filter = ('snapshot_date', 'account__account_type')
     search_fields = ('account__user__username', 'account__name')
     readonly_fields = ('account', 'snapshot_date', 'balance')
@@ -163,9 +163,23 @@ class AnalyticsAccountDailyBalanceAdmin(admin.ModelAdmin):
         self.message_user(request, f"Exporting data for {queryset.count()} balance records")
     export_balance_data.short_description = 'Export balance data'
 
+    def get_owner(self, obj):
+        try:
+            return obj.account.user
+        except Exception:
+            return '-'
+    get_owner.short_description = 'مالک'
+
+    def get_snapshot_total(self, obj):
+        try:
+            return obj.account.daily_balances.count()
+        except Exception:
+            return 0
+    get_snapshot_total.short_description = 'تعداد اسنپ‌شات‌های حساب'
+
 
 class AnalyticsDepositDailyBalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'deposit', 'get_persian_snapshot_date', 'balance')
+    list_display = ('id', 'deposit', 'get_owner', 'get_persian_snapshot_date', 'balance', 'snapshot_number')
     list_filter = ('snapshot_date',)
     search_fields = ('deposit__user__username',)
     readonly_fields = ('deposit', 'snapshot_date', 'balance')
@@ -178,6 +192,20 @@ class AnalyticsDepositDailyBalanceAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_owner(self, obj):
+        try:
+            return obj.deposit.user
+        except Exception:
+            return '-'
+    get_owner.short_description = 'مالک'
+
+    def get_snapshot_total(self, obj):
+        try:
+            return obj.deposit.daily_balances.count()
+        except Exception:
+            return 0
+    get_snapshot_total.short_description = 'تعداد اسنپ‌شات‌های سپرده'
 
 
 # Register analytics admins with the main admin site

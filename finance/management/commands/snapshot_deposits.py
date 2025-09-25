@@ -21,5 +21,10 @@ class Command(BaseCommand):
                 defaults={'balance': Decimal(deposit.balance)}
             )
             if was_created:
+                # Assign next snapshot number for this deposit
+                from finance.models import DepositDailyBalance as DDB
+                next_num = DDB.objects.filter(deposit=deposit).count()
+                obj.snapshot_number = next_num
+                obj.save(update_fields=['snapshot_number'])
                 created += 1
         self.stdout.write(self.style.SUCCESS(f'Created {created} deposit snapshot(s) for {today}'))

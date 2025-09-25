@@ -35,6 +35,33 @@ class Account(models.Model):
         verbose_name = _('حساب')
         verbose_name_plural = _('حساب‌ها')
 
+    def get_unit(self):
+        """Return unit label for this account's amounts."""
+        if self.account_type == self.ACCOUNT_TYPE_RIAL:
+            return 'ریال'
+        if self.account_type == self.ACCOUNT_TYPE_GOLD:
+            return 'گرم'
+        if self.account_type == self.ACCOUNT_TYPE_USD:
+            return 'دلار'
+        if self.account_type == self.ACCOUNT_TYPE_EUR:
+            return 'یورو'
+        if self.account_type == self.ACCOUNT_TYPE_GBP:
+            return 'پوند'
+        return ''
+    get_unit.short_description = 'واحد'
+
+    def get_kind(self):
+        """Return human-readable kind for this account (context-based)."""
+        return self.get_account_type_display()
+    get_kind.short_description = 'نوع'
+
+    def get_snapshot_count(self):
+        try:
+            return self.daily_balances.count()
+        except Exception:
+            return 0
+    get_snapshot_count.short_description = 'تعداد اسنپ‌شات'
+
     @property
     def balance(self):
         """Calculate current balance based on initial balance and all transactions"""

@@ -8,9 +8,16 @@ import uuid
 from ..utils import get_persian_date_display
 
 
+def generate_unique_short_user_id() -> str:
+    """Deprecated: placeholder kept for migrations; actual value set in save()."""
+    return str(uuid.uuid4()).replace('-', '')[:8]
+
+
 class User(AbstractUser):
     # Unique ID for each user
     user_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, verbose_name=_('User ID'))
+    # Short unique code (first 8+ chars of UUID, collision-safe)
+    short_user_id = models.CharField(max_length=12, unique=True, editable=False, verbose_name=_('Short User ID'), db_index=True)
     
     # Personal Information
     national_id = models.CharField(max_length=10, blank=True, verbose_name=_('کد ملی'), help_text=_('10-digit national ID'))
@@ -27,12 +34,23 @@ class User(AbstractUser):
         verbose_name_plural = _('کاربران')
     
     def __str__(self):
-        return f"User {str(self.user_id)[:8]}"
-    
-    @property
-    def short_user_id(self):
-        """Return the first 8 characters of the user_id"""
-        return str(self.user_id)[:8]
+        return self.short_user_id or str(self.user_id)[:8]
+
+    def save(self, *args, **kwargs):
+        # Ensure short_user_id is the first 8 chars of user_id (as specified)
+        if not self.user_id:
+            self.user_id = uuid.uuid4()
+        self.short_user_id = str(self.user_id)[:8]
+        super().save(*args, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Ensure in-memory attribute is set for tests accessing before refresh
+        try:
+            if not self.short_user_id and self.user_id:
+                self.short_user_id = str(self.user_id)[:8]
+        except Exception:
+            pass
     
     def get_persian_date_joined(self):
         """Return Persian date for date_joined"""

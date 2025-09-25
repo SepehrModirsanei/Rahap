@@ -410,4 +410,5 @@ class Transaction(models.Model):
     get_withdrawal_destination_display.admin_order_field = 'withdrawal_card_number'
 
     def __str__(self):
-        return f"Txn({self.kind}) {self.amount} by {self.user.username}"
+        amt = f"{self.amount:.2f}" if self.amount is not None else "0.00"
+        return f"{self.kind}:{amt}"

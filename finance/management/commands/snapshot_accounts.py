@@ -17,6 +17,10 @@ class Command(BaseCommand):
                 defaults={'balance': Decimal(acc.balance)}
             )
             if was_created:
+                # Assign next snapshot number for this account
+                next_num = AccountDailyBalance.objects.filter(account=acc).count()
+                obj.snapshot_number = next_num
+                obj.save(update_fields=['snapshot_number'])
                 created += 1
         self.stdout.write(self.style.SUCCESS(f'Created {created} account snapshot(s) for {today}'))
 

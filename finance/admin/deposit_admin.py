@@ -22,7 +22,7 @@ class DepositTxnInInline(ReadOnlyTransactionInline):
 @admin.register(Deposit)
 class DepositAdmin(admin.ModelAdmin):
     form = DepositAdminForm
-    list_display = ('id', 'user', 'initial_balance', 'monthly_profit_rate', 'profit_kind', 'breakage_coefficient', 'get_persian_created_at', 'get_profit_calculation_info')
+    list_display = ('id', 'user', 'get_kind', 'get_unit', 'initial_balance', 'monthly_profit_rate', 'profit_kind', 'breakage_coefficient', 'get_snapshot_count', 'get_persian_created_at', 'get_profit_calculation_info')
     list_filter = (ProfitCalculationFilter,)
     search_fields = ('user__username',)
     actions = ['accrue_profit_now']

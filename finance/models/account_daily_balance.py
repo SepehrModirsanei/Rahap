@@ -7,6 +7,7 @@ class AccountDailyBalance(models.Model):
     account = models.ForeignKey('Account', on_delete=models.CASCADE, related_name='daily_balances')
     snapshot_date = models.DateField()
     balance = models.DecimalField(max_digits=18, decimal_places=6)
+    snapshot_number = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = _('موجودی روزانه حساب')

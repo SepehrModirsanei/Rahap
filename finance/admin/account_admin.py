@@ -28,7 +28,7 @@ class AccountTxnInInline(ReadOnlyTransactionInline):
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'name', 'account_type', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'get_persian_created_at', 'get_profit_start_date', 'get_next_profit_date', 'get_average_balance')
+    list_display = ('id', 'user', 'name', 'get_kind', 'get_unit', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'get_snapshot_count', 'get_persian_created_at', 'get_profit_start_date', 'get_next_profit_date', 'get_average_balance')
     list_filter = ('account_type', ProfitCalculationFilter)
     search_fields = ('user__username', 'name')
     actions = ['accrue_profit_now', 'snapshot_today']

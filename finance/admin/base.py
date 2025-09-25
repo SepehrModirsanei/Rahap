@@ -175,7 +175,7 @@ class BaseTransactionAdmin(admin.ModelAdmin):
 
 class BaseAccountDailyBalanceAdmin(admin.ModelAdmin):
     """Base admin class for AccountDailyBalance model"""
-    list_display = ('account', 'get_persian_snapshot_date', 'balance_display')
+    list_display = ('account', 'get_owner', 'get_persian_snapshot_date', 'balance_display', 'get_snapshot_total')
     list_filter = ('snapshot_date',)
     search_fields = ('account__name', 'account__user__username')
     readonly_fields = ('balance_display',)
@@ -189,6 +189,20 @@ class BaseAccountDailyBalanceAdmin(admin.ModelAdmin):
         """Display balance with formatting"""
         return f"{obj.balance:,.2f}"
     balance_display.short_description = 'موجودی'
+
+    def get_owner(self, obj):
+        try:
+            return obj.account.user
+        except Exception:
+            return '-'
+    get_owner.short_description = 'مالک'
+
+    def get_snapshot_total(self, obj):
+        try:
+            return obj.account.daily_balances.count()
+        except Exception:
+            return 0
+    get_snapshot_total.short_description = 'تعداد اسنپ‌شات‌های حساب'
 
 
 # Mixin classes for different permission levels

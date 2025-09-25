@@ -32,6 +32,23 @@ class Deposit(models.Model):
         verbose_name = _('سپرده')
         verbose_name_plural = _('سپرده‌ها')
 
+    def get_unit(self):
+        """Deposits are IRR-denominated."""
+        return 'ریال'
+    get_unit.short_description = 'واحد'
+
+    def get_kind(self):
+        """Return human-readable timeframe kind for this deposit."""
+        return self.get_profit_kind_display()
+    get_kind.short_description = 'نوع'
+
+    def get_snapshot_count(self):
+        try:
+            return self.daily_balances.count()
+        except Exception:
+            return 0
+    get_snapshot_count.short_description = 'تعداد اسنپ‌شات'
+
     @property
     def amount(self):
         """Alias for initial_balance for backward compatibility"""
