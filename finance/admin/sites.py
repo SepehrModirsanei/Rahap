@@ -11,6 +11,10 @@ from .base import (
     BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin
 )
 from .mixins import ReadOnlyMixin, TreasuryMixin, OperationMixin
+from .workflow import (
+    TreasuryWorkflowTransactionAdmin, OperationWorkflowTransactionAdmin,
+    SupervisorWorkflowTransactionAdmin, FinanceManagerWorkflowTransactionAdmin
+)
 from .user_admin import UserAdmin
 from .account_admin import AccountAdmin
 from .analytics import analytics_admin_site
@@ -29,9 +33,13 @@ from .transaction_specialized_admin import (
 # Create admin sites
 class TreasuryAdminSite(AdminSite):
     site_header = "مدیریت خزانه‌داری"
-    site_title = "مدیریت خزانه‌داری"
+
+
+class FinanceManagerAdminSite(AdminSite):
+    site_header = "مدیریت مالی"
+    site_title = "مدیریت مالی"
     index_title = "مدیریت کامل مالی"
-    site_url = "/admin/treasury/"
+    site_url = "/admin/finance-manager/"
 
 treasury_admin_site = TreasuryAdminSite(name='treasury_admin')
 
@@ -74,6 +82,28 @@ operation_admin_site.register(AccountTransfer, AccountTransferAdmin)
 operation_admin_site.register(ProfitTransaction, ProfitTransactionAdmin)
 operation_admin_site.register(DepositTransaction, DepositTransactionAdmin)
 
+
+# Finance Manager Admin Site
+finance_manager_admin_site = FinanceManagerAdminSite(name='finance_manager_admin')
+
+# Register Finance Manager Admin with workflow
+finance_manager_admin_site.register(User, type('FinanceManagerUserAdmin', (ReadOnlyMixin, UserAdmin), {}))
+finance_manager_admin_site.register(Account, type('FinanceManagerAccountAdmin', (ReadOnlyMixin, AccountAdmin), {}))
+finance_manager_admin_site.register(Deposit, type('FinanceManagerDepositAdmin', (ReadOnlyMixin, BaseDepositAdmin), {}))
+finance_manager_admin_site.register(Transaction, FinanceManagerWorkflowTransactionAdmin)
+finance_manager_admin_site.register(AccountDailyBalance, type('FinanceManagerAccountDailyBalanceAdmin', (ReadOnlyMixin, BaseAccountDailyBalanceAdmin), {}))
+finance_manager_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
+
+# Sandogh functionality is now part of Treasury Admin
+
+# Update existing admin sites to use workflow
+# Treasury Admin Site - Update to use workflow
+treasury_admin_site.unregister(Transaction)
+treasury_admin_site.register(Transaction, TreasuryWorkflowTransactionAdmin)
+
+# Operation Admin Site - Update to use workflow  
+operation_admin_site.unregister(Transaction)
+operation_admin_site.register(Transaction, OperationWorkflowTransactionAdmin)
 
 # Financial Overview is now handled by supervisor.py
 # Use supervisor admin classes for financial overview functionality

@@ -79,21 +79,24 @@ class Deposit(models.Model):
         now = timezone.now()
         if not self.monthly_profit_rate:
             return
-        # Determine accrual window based on profit kind (still calculated daily)
+        
+        # Determine transfer interval based on profit kind
         if self.profit_kind == self.PROFIT_KIND_MONTHLY:
-            window_days = 30
+            transfer_interval_days = 30
         elif self.profit_kind == self.PROFIT_KIND_SEMIANNUAL:
-            window_days = 180
-        else:
-            window_days = 365
+            transfer_interval_days = 180
+        else:  # PROFIT_KIND_YEARLY
+            transfer_interval_days = 365
+            
         # Check if enough time has passed since last profit accrual
-        if self.last_profit_accrual_at and (now - self.last_profit_accrual_at).days < window_days:
+        if self.last_profit_accrual_at and (now - self.last_profit_accrual_at).days < transfer_interval_days:
             return
         
-        # Compute profit based on daily snapshots over last window_days ending yesterday
+        # Compute profit based on daily snapshots over last 30 days ending yesterday
+        # (Profit calculation is always daily, but transfer happens at different intervals)
         from datetime import date, timedelta
         period_end = date.today()
-        period_start = period_end - timedelta(days=window_days)
+        period_start = period_end - timedelta(days=30)  # Always use 30 days for calculation
         snapshots = list(self.daily_balances.filter(snapshot_date__gt=period_start).order_by('snapshot_date'))
         # Get carry snapshot on or before start
         carry = self.daily_balances.filter(snapshot_date__lte=period_start).order_by('-snapshot_date').first()
@@ -120,8 +123,9 @@ class Deposit(models.Model):
                 weighted_sum += (bal * days)
         if total_days == 0:
             return
-        # Profit = rate% * (sum of daily balances / window_days)
-        average_balance = weighted_sum / Decimal(window_days)
+        # Profit = rate% * (sum of daily balances / 30 days)
+        # Always use 30 days for calculation, regardless of transfer interval
+        average_balance = weighted_sum / Decimal(30)
         profit = (average_balance * Decimal(self.monthly_profit_rate)) / Decimal(100)
         if profit <= 0:
             return
@@ -178,19 +182,20 @@ class Deposit(models.Model):
         # initial_balance (which may include accumulated profits over time).
         profit_start_date = self.created_at
         
-        # Calculate next profit date
+        # Calculate next profit date based on transfer interval
         next_profit_date = None
         try:
             if self.profit_kind == self.PROFIT_KIND_MONTHLY:
-                days = 30
+                transfer_interval_days = 30
             elif self.profit_kind == self.PROFIT_KIND_SEMIANNUAL:
-                days = 180
-            else:
-                days = 365
+                transfer_interval_days = 180
+            else:  # PROFIT_KIND_YEARLY
+                transfer_interval_days = 365
+                
             if self.last_profit_accrual_at:
-                next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=days)
+                next_profit_date = self.last_profit_accrual_at + timezone.timedelta(days=transfer_interval_days)
             elif self.created_at:
-                next_profit_date = self.created_at + timezone.timedelta(days=days)
+                next_profit_date = self.created_at + timezone.timedelta(days=transfer_interval_days)
         except Exception:
             next_profit_date = None
         

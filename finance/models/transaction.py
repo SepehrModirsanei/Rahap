@@ -56,6 +56,8 @@ class Transaction(models.Model):
     STATE_DONE = 'done'
     STATE_REJECTED = 'rejected'
     STATE_WAITING_FINANCE_MANAGER = 'waiting_finance_manager'
+    STATE_APPROVED_BY_FINANCE_MANAGER = 'approved_by_finance_manager'
+    STATE_APPROVED_BY_SANDOGH = 'approved_by_sandogh'
     STATE_CHOICES = [
         (STATE_WAITING_TREASURY, _('در انتظار خزانه‌داری')),
         (STATE_WAITING_SANDOGH, _('در انتظار صندوق')),
@@ -64,6 +66,8 @@ class Transaction(models.Model):
         (STATE_DONE, _('انجام شده')),
         (STATE_REJECTED, _('رد شده')),
         (STATE_WAITING_FINANCE_MANAGER, _('در انتظار تایید مدیر مالی')),
+        (STATE_APPROVED_BY_FINANCE_MANAGER, _('تایید شده توسط مدیر مالی')),
+        (STATE_APPROVED_BY_SANDOGH, _('تایید شده توسط صندوق')),
     ]
     state = models.CharField(max_length=40, choices=STATE_CHOICES, default=STATE_WAITING_TREASURY, verbose_name=_('وضعیت'))
     
@@ -375,6 +379,14 @@ class Transaction(models.Model):
         """Override save to generate transaction code for new transactions and auto-apply done transactions"""
         if not self.transaction_code:
             self.transaction_code = self.generate_transaction_code()
+
+        # Set initial state based on transaction kind
+        if not self.pk:  # New transaction
+            if self.kind == self.KIND_WITHDRAWAL_REQUEST:
+                self.state = self.STATE_WAITING_FINANCE_MANAGER
+            elif self.kind == self.KIND_CREDIT_INCREASE:
+                self.state = self.STATE_WAITING_TREASURY
+            # Other transaction types keep default state
 
         # Ensure computed fields (e.g., destination_amount) are set before persisting
         try:

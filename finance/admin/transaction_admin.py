@@ -3,11 +3,12 @@ from django.utils import timezone
 from ..models import Transaction
 from ..forms import TransactionAdminForm
 from .inlines import TransactionStateLogInline
+from .workflow import WorkflowMixin
 
 
 @admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('transaction_code', 'id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'applied', 'get_receipt_display', 'get_withdrawal_destination_display', 'get_persian_scheduled_for', 'get_persian_created_at')
+class TransactionAdmin(WorkflowMixin, admin.ModelAdmin):
+    list_display = ('transaction_code', 'id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'get_workflow_status_display', 'get_workflow_progress', 'get_next_action_display', 'applied', 'get_receipt_display', 'get_withdrawal_destination_display', 'get_persian_scheduled_for', 'get_persian_created_at')
     list_filter = ('kind', 'state')
     search_fields = ('user__username',)
     actions = ['apply_transactions']
@@ -32,9 +33,9 @@ class TransactionAdmin(admin.ModelAdmin):
             'description': 'Destination for withdrawal requests (either card or SHEBA)',
             'classes': ('collapse',)
         }),
-        ('Opinions', {
-            'fields': ('admin_opinion', 'treasurer_opinion', 'finance_manager_opinion', 'user_comment'),
-            'description': 'ثبت نظرات: نظر ادمین، نظر خزانه‌دار، نظر مدیر مالی',
+        ('نظرات همه کارکنان', {
+            'fields': ('user_comment', 'finance_manager_opinion', 'treasurer_opinion', 'admin_opinion'),
+            'description': 'نظرات کاربر، مدیر مالی، خزانه‌دار و ادمین عملیات',
         }),
     )
 
