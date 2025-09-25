@@ -8,7 +8,7 @@ to eliminate duplication and provide consistent functionality.
 from django.contrib import admin
 from django.contrib.admin import AdminSite
 from .base import (
-    BaseUserAdmin, BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin,
+    BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin,
     ReadOnlyMixin, TreasuryMixin, OperationMixin, AnalyticsMixin
 )
 from .user_admin import UserAdmin

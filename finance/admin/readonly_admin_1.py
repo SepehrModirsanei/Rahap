@@ -103,7 +103,7 @@ class ReadOnlyTransactionAdmin(admin.ModelAdmin):
 
 @admin.register(AccountDailyBalance)
 class ReadOnlyAccountDailyBalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'account', 'get_owner', 'get_persian_snapshot_date', 'balance', 'snapshot_number')
+    list_display = ('id', 'get_account_name', 'get_account_type', 'get_owner', 'get_persian_snapshot_date', 'balance', 'snapshot_number')
     list_filter = ('snapshot_date', 'account__account_type')
     search_fields = ('account__user__username', 'account__name')
     readonly_fields = ('account', 'snapshot_date', 'balance')
@@ -124,6 +124,20 @@ class ReadOnlyAccountDailyBalanceAdmin(admin.ModelAdmin):
             return '-'
     get_owner.short_description = 'مالک'
 
+    def get_account_type(self, obj):
+        try:
+            return obj.account.get_account_type_display()
+        except Exception:
+            return '-'
+    get_account_type.short_description = 'نوع حساب'
+
+    def get_account_name(self, obj):
+        try:
+            return obj.account.name
+        except Exception:
+            return '-'
+    get_account_name.short_description = 'نام حساب'
+
     def get_snapshot_total(self, obj):
         try:
             return obj.account.daily_balances.count()
@@ -134,7 +148,7 @@ class ReadOnlyAccountDailyBalanceAdmin(admin.ModelAdmin):
 
 @admin.register(DepositDailyBalance)
 class ReadOnlyDepositDailyBalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'deposit', 'get_persian_snapshot_date', 'balance', 'snapshot_number')
+    list_display = ('id', 'get_deposit_name', 'get_owner_short', 'get_deposit_kind', 'get_persian_snapshot_date', 'balance', 'snapshot_number')
     list_filter = ('snapshot_date',)
     search_fields = ('deposit__user__username',)
     readonly_fields = ('deposit', 'snapshot_date', 'balance')
@@ -147,6 +161,27 @@ class ReadOnlyDepositDailyBalanceAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_deposit_kind(self, obj):
+        try:
+            return obj.deposit.get_profit_kind_display()
+        except Exception:
+            return '-'
+    get_deposit_kind.short_description = 'نوع سپرده'
+
+    def get_deposit_name(self, obj):
+        try:
+            return obj.deposit.user.username if not hasattr(obj.deposit, 'name') else obj.deposit.name
+        except Exception:
+            return '-'
+    get_deposit_name.short_description = 'نام سپرده'
+
+    def get_owner_short(self, obj):
+        try:
+            return obj.deposit.user.short_user_id
+        except Exception:
+            return '-'
+    get_owner_short.short_description = 'مالک (کوتاه)'
 
     def get_snapshot_total(self, obj):
         try:

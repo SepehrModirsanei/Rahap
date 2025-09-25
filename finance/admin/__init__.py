@@ -6,7 +6,7 @@ This module provides all admin classes and configurations for the finance applic
 
 # Import base admin classes
 from .base import (
-    BaseUserAdmin, BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin,
+    BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin,
     AccountTxnInInline, AccountTxnOutInline, DepositTxnInInline
 )
 
@@ -43,7 +43,6 @@ from .supervisor import (
 
 __all__ = [
     # Base classes
-    'BaseUserAdmin',
     'BaseAccountAdmin', 
     'BaseDepositAdmin',
     'BaseTransactionAdmin',

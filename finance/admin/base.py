@@ -50,36 +50,6 @@ class DepositTxnInInline(BaseTransactionInline):
     verbose_name_plural = 'Deposit Transactions'
 
 
-class BaseUserAdmin(admin.ModelAdmin):
-    """Base admin class for User model"""
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_active', 'date_joined_display')
-    list_filter = ('is_active', 'is_staff', 'date_joined')
-    search_fields = ('username', 'email', 'first_name', 'last_name')
-    readonly_fields = ('date_joined', 'last_login', 'user_id_display')
-    fieldsets = (
-        ('Personal Information', {
-            'fields': ('username', 'email', 'first_name', 'last_name', 'user_id_display')
-        }),
-        ('Account Status', {
-            'fields': ('is_active', 'is_staff', 'is_superuser')
-        }),
-        ('Important Dates', {
-            'fields': ('date_joined', 'last_login'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def date_joined_display(self, obj):
-        """Display Persian date for date_joined"""
-        return get_persian_date_display(obj.date_joined)
-    date_joined_display.short_description = 'تاریخ عضویت'
-
-    def user_id_display(self, obj):
-        """Display user ID"""
-        return obj.short_id
-    user_id_display.short_description = 'شناسه کاربر'
-
-
 class BaseAccountAdmin(admin.ModelAdmin):
     """Base admin class for Account model"""
     list_display = ('user', 'name', 'account_type', 'balance_display', 'monthly_profit_rate', 'created_at_display')
@@ -175,7 +145,7 @@ class BaseTransactionAdmin(admin.ModelAdmin):
 
 class BaseAccountDailyBalanceAdmin(admin.ModelAdmin):
     """Base admin class for AccountDailyBalance model"""
-    list_display = ('account', 'get_owner', 'get_persian_snapshot_date', 'balance_display', 'get_snapshot_total')
+    list_display = ('get_account_name', 'get_account_type', 'get_owner', 'get_persian_snapshot_date', 'balance_display', 'get_snapshot_total')
     list_filter = ('snapshot_date',)
     search_fields = ('account__name', 'account__user__username')
     readonly_fields = ('balance_display',)
@@ -203,6 +173,20 @@ class BaseAccountDailyBalanceAdmin(admin.ModelAdmin):
         except Exception:
             return 0
     get_snapshot_total.short_description = 'تعداد اسنپ‌شات‌های حساب'
+
+    def get_account_type(self, obj):
+        try:
+            return obj.account.get_account_type_display()
+        except Exception:
+            return '-'
+    get_account_type.short_description = 'نوع حساب'
+
+    def get_account_name(self, obj):
+        try:
+            return obj.account.name
+        except Exception:
+            return '-'
+    get_account_name.short_description = 'نام حساب'
 
 
 # Mixin classes for different permission levels
