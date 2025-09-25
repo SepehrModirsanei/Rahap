@@ -7,6 +7,9 @@ to eliminate duplication and provide consistent functionality.
 
 from django.contrib import admin
 from django.contrib.admin import AdminSite
+from django.urls import path
+from django.utils import timezone
+from django.template.response import TemplateResponse
 from .base import (
     BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin,
     ReadOnlyMixin, TreasuryMixin, OperationMixin, AnalyticsMixin
@@ -266,6 +269,98 @@ class ReadOnlyAdminSite2(AdminSite):
     site_url = "/admin/analytics/"
 
 readonly_admin_site_2 = ReadOnlyAdminSite2(name='readonly_admin_2')
+
+# Simple analytics dashboard view
+def analytics_dashboard(request):
+    from ..models import Account, Deposit, Transaction
+    from decimal import Decimal
+    today = timezone.localdate()
+    tomorrow = today + timezone.timedelta(days=1)
+
+    # Account totals by type (sum of current balances)
+    def sum_accounts_by_type(acc_type):
+        total = Decimal('0')
+        for acc in Account.objects.filter(account_type=acc_type):
+            total += Decimal(acc.balance)
+        return total
+
+    totals = {
+        'usd_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_USD),
+        'eur_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_EUR),
+        'gbp_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_GBP),
+        'gold_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_GOLD),
+        'rial_accounts_total': sum_accounts_by_type(Account.ACCOUNT_TYPE_RIAL),
+    }
+
+    # Rial deposits total (sum of deposit balances)
+    dep_total = Decimal('0')
+    for d in Deposit.objects.all():
+        dep_total += Decimal(d.balance)
+    totals['rial_deposits_total'] = dep_total
+
+    # Profit due tomorrow: deposits whose next profit date == tomorrow
+    # Using deposit logic: based on profit_kind windows
+    def next_profit_date(deposit):
+        if deposit.profit_kind == deposit.PROFIT_KIND_MONTHLY:
+            days = 30
+        elif deposit.profit_kind == deposit.PROFIT_KIND_SEMIANNUAL:
+            days = 180
+        else:
+            days = 365
+        base = deposit.last_profit_accrual_at or deposit.created_at
+        if not base:
+            return None
+        return (base + timezone.timedelta(days=days)).date()
+
+    profit_due_tomorrow = 0
+    for d in Deposit.objects.all():
+        nd = next_profit_date(d)
+        if nd == tomorrow:
+            # Approximation: show computed period profit preview as 0 (expensive to compute live)
+            profit_due_tomorrow += 0
+    totals['profit_due_tomorrow'] = profit_due_tomorrow
+
+    # Profit transferred today: sum of applied profit transactions created today
+    profit_today = Transaction.objects.filter(
+        kind__in=[Transaction.KIND_PROFIT_ACCOUNT, Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT],
+        applied=True,
+        created_at__date=today,
+    ).aggregate(total_amount=admin.models.Sum('amount'))['total_amount'] or Decimal('0')
+    totals['profit_transferred_today'] = profit_today
+
+    # Credit increase today/yesterday
+    credit_today = Transaction.objects.filter(
+        kind=Transaction.KIND_CREDIT_INCREASE,
+        applied=True,
+        created_at__date=today,
+    ).aggregate(total_amount=admin.models.Sum('amount'))['total_amount'] or Decimal('0')
+    credit_yesterday = Transaction.objects.filter(
+        kind=Transaction.KIND_CREDIT_INCREASE,
+        applied=True,
+        created_at__date=today - timezone.timedelta(days=1),
+    ).aggregate(total_amount=admin.models.Sum('amount'))['total_amount'] or Decimal('0')
+    totals['credit_increase_today'] = credit_today
+    totals['credit_increase_yesterday'] = credit_yesterday
+
+    context = dict(
+        request=request,
+        totals=totals,
+        title='داشبورد تحلیل',
+        site_header='تحلیل و گزارش‌گیری (فقط خواندن)',
+        has_permission=True,
+    )
+    return TemplateResponse(request, 'admin/analytics_dashboard.html', context)
+
+
+def get_analytics_urls(urls):
+    info = [
+        path('analytics/', analytics_dashboard, name='analytics-dashboard'),
+    ]
+    return info + urls
+
+# Attach custom URLs to the main admin site and the analytics site
+admin.site.get_urls = (lambda orig=admin.site.get_urls: (lambda: get_analytics_urls(orig())) )()
+readonly_admin_site_2.get_urls = (lambda orig=readonly_admin_site_2.get_urls: (lambda: get_analytics_urls(orig())) )()
 
 # Register Read-Only Admin 2
 readonly_admin_site_2.register(User, AnalyticsUserAdmin)

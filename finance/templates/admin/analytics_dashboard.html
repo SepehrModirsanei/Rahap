@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<div style="display:flex; gap:24px; flex-wrap:wrap;">
+  <div class="module" style="min-width:280px;">
+    <h2>حساب‌ها</h2>
+    <ul>
+      <li>جمع دلاری (USD): {{ totals.usd_accounts_total }}</li>
+      <li>جمع یورویی (EUR): {{ totals.eur_accounts_total }}</li>
+      <li>جمع پوندی (GBP): {{ totals.gbp_accounts_total }}</li>
+      <li>جمع طلا (گرم): {{ totals.gold_accounts_total }}</li>
+      <li>جمع ریالی: {{ totals.rial_accounts_total }}</li>
+    </ul>
+  </div>
+  <div class="module" style="min-width:280px;">
+    <h2>سپرده‌ها</h2>
+    <ul>
+      <li>جمع سپرده‌های ریالی: {{ totals.rial_deposits_total }}</li>
+    </ul>
+  </div>
+  <div class="module" style="min-width:280px;">
+    <h2>سود</h2>
+    <ul>
+      <li>سود قابل انتقال فردا: {{ totals.profit_due_tomorrow }}</li>
+      <li>سود منتقل‌شده امروز: {{ totals.profit_transferred_today }}</li>
+    </ul>
+  </div>
+  <div class="module" style="min-width:280px;">
+    <h2>افزایش اعتبار</h2>
+    <ul>
+      <li>امروز: {{ totals.credit_increase_today }}</li>
+      <li>دیروز: {{ totals.credit_increase_yesterday }}</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
+
+
