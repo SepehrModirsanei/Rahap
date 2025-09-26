@@ -49,8 +49,15 @@ class WithdrawalRequestForm(forms.ModelForm):
                 account_type=Account.ACCOUNT_TYPE_RIAL
             )
             self.fields['source_account'].queryset = rial_accounts
+            self.fields['source_account'].label_from_instance = self._account_label_from_instance
         else:
             self.fields['source_account'].queryset = Account.objects.none()
+
+    def _account_label_from_instance(self, obj):
+        """Custom label for account fields"""
+        if obj:
+            return f"{obj.name} ({obj.get_account_type_display()})"
+        return ""
 
     def _populate_bank_destination_choices(self):
         """Populate bank_destination choices from user's stored bank info"""
@@ -122,9 +129,16 @@ class CreditIncreaseForm(forms.ModelForm):
                 account_type=Account.ACCOUNT_TYPE_RIAL
             )
             self.fields['destination_account'].queryset = rial_accounts
+            self.fields['destination_account'].label_from_instance = self._account_label_from_instance
         else:
             # Initially show no accounts - will be populated by JavaScript
             self.fields['destination_account'].queryset = Account.objects.none()
+
+    def _account_label_from_instance(self, obj):
+        """Custom label for account fields"""
+        if obj:
+            return f"{obj.name} ({obj.get_account_type_display()})"
+        return ""
 
     def clean(self):
         cleaned = super().clean()
@@ -168,9 +182,19 @@ class AccountTransferForm(forms.ModelForm):
             user_accounts = Account.objects.filter(user_id=user_id)
             self.fields['source_account'].queryset = user_accounts
             self.fields['destination_account'].queryset = user_accounts
+            
+            # Set custom display for account fields
+            self.fields['source_account'].label_from_instance = self._account_label_from_instance
+            self.fields['destination_account'].label_from_instance = self._account_label_from_instance
         else:
             self.fields['source_account'].queryset = Account.objects.none()
             self.fields['destination_account'].queryset = Account.objects.none()
+
+    def _account_label_from_instance(self, obj):
+        """Custom label for account fields"""
+        if obj:
+            return f"{obj.name} ({obj.get_account_type_display()})"
+        return ""
 
     def clean(self):
         cleaned = super().clean()

@@ -107,6 +107,37 @@ class WorkflowMixin:
         return next_actions.get(obj.state, 'نامشخص')
     get_next_action_display.short_description = 'اقدام بعدی'
 
+    def get_source_account_display(self, obj):
+        """Display source account with name and type"""
+        try:
+            if obj.source_account:
+                return f"{obj.source_account.name} ({obj.source_account.get_account_type_display()})"
+            return "-"
+        except Exception:
+            return "-"
+    get_source_account_display.short_description = 'حساب مبدا'
+    get_source_account_display.admin_order_field = 'source_account'
+
+    def get_destination_account_display(self, obj):
+        """Display destination account with name and type"""
+        try:
+            if obj.destination_account:
+                return f"{obj.destination_account.name} ({obj.destination_account.get_account_type_display()})"
+            return "-"
+        except Exception:
+            return "-"
+    get_destination_account_display.short_description = 'حساب مقصد'
+    get_destination_account_display.admin_order_field = 'destination_account'
+
+    def get_list_display(self, request):
+        """Get list display with workflow columns"""
+        return [
+            'transaction_code', 'user', 'kind', 'amount', 
+            'get_source_account_display', 'get_destination_account_display',
+            'get_workflow_status_display', 'get_workflow_progress',
+            'get_next_action_display', 'created_at'
+        ]
+
 
 class TreasuryWorkflowMixin(TreasuryMixin, WorkflowMixin):
     """Treasury admin workflow mixin - handles both treasury and sandogh functions"""
@@ -121,14 +152,6 @@ class TreasuryWorkflowMixin(TreasuryMixin, WorkflowMixin):
             Transaction.STATE_APPROVED_BY_FINANCE_MANAGER,
             Transaction.STATE_WAITING_SANDOGH
         ])
-    
-    def get_list_display(self, request):
-        """Get list display with workflow columns"""
-        return [
-            'transaction_code', 'user', 'kind', 'amount', 
-            'get_workflow_status_display', 'get_workflow_progress',
-            'get_next_action_display', 'created_at'
-        ]
     
     actions = ['approve_for_sandogh', 'verify_sandogh', 'reject_transaction']
     
@@ -185,14 +208,6 @@ class FinanceManagerWorkflowMixin(WorkflowMixin):
             kind=Transaction.KIND_WITHDRAWAL_REQUEST
         )
     
-    def get_list_display(self, request):
-        """Get list display with workflow columns"""
-        return [
-            'transaction_code', 'user', 'kind', 'amount',
-            'get_workflow_status_display', 'get_workflow_progress',
-            'get_next_action_display', 'created_at'
-        ]
-    
     actions = ['approve_finance_manager', 'reject_transaction']
     
     def approve_finance_manager(self, request, queryset):
@@ -229,14 +244,6 @@ class OperationWorkflowMixin(OperationMixin, WorkflowMixin):
         qs = admin.ModelAdmin.get_queryset(self, request)
         # Operation admin sees transactions approved by sandogh
         return qs.filter(state=Transaction.STATE_APPROVED_BY_SANDOGH)
-    
-    def get_list_display(self, request):
-        """Get list display with workflow columns"""
-        return [
-            'transaction_code', 'user', 'kind', 'amount',
-            'get_workflow_status_display', 'get_workflow_progress',
-            'get_next_action_display', 'created_at'
-        ]
     
     actions = ['complete_transaction', 'reject_transaction']
     
@@ -277,23 +284,11 @@ class SupervisorWorkflowMixin(ReadOnlyMixin, WorkflowMixin):
         # Supervisor sees all transactions for oversight
         return qs
     
-    def get_list_display(self, request):
-        """Get list display with workflow columns"""
-        return [
-            'transaction_code', 'user', 'kind', 'amount',
-            'get_workflow_status_display', 'get_workflow_progress',
-            'get_next_action_display', 'created_at'
-        ]
 
 
 # Workflow-specific admin classes
 class TreasuryWorkflowTransactionAdmin(TreasuryWorkflowMixin, admin.ModelAdmin):
     """Treasury admin for workflow transactions"""
-    list_display = [
-        'transaction_code', 'user', 'kind', 'amount', 
-        'get_workflow_status_display', 'get_workflow_progress',
-        'get_next_action_display', 'created_at'
-    ]
     list_filter = ['state', 'kind', 'created_at']
     search_fields = ['transaction_code', 'user__username']
     readonly_fields = ['transaction_code', 'created_at', 'applied']
@@ -318,11 +313,6 @@ class TreasuryWorkflowTransactionAdmin(TreasuryWorkflowMixin, admin.ModelAdmin):
 
 class FinanceManagerWorkflowTransactionAdmin(FinanceManagerWorkflowMixin, admin.ModelAdmin):
     """Finance manager admin for withdrawal requests"""
-    list_display = [
-        'transaction_code', 'user', 'kind', 'amount',
-        'get_workflow_status_display', 'get_workflow_progress',
-        'get_next_action_display', 'created_at'
-    ]
     list_filter = ['state', 'kind', 'created_at']
     search_fields = ['transaction_code', 'user__username']
     readonly_fields = ['transaction_code', 'created_at', 'applied']
@@ -347,11 +337,6 @@ class FinanceManagerWorkflowTransactionAdmin(FinanceManagerWorkflowMixin, admin.
 
 class OperationWorkflowTransactionAdmin(OperationWorkflowMixin, admin.ModelAdmin):
     """Operation admin for completing transactions"""
-    list_display = [
-        'transaction_code', 'user', 'kind', 'amount',
-        'get_workflow_status_display', 'get_workflow_progress',
-        'get_next_action_display', 'created_at'
-    ]
     list_filter = ['state', 'kind', 'created_at']
     search_fields = ['transaction_code', 'user__username']
     readonly_fields = ['transaction_code', 'created_at', 'applied']
@@ -376,11 +361,6 @@ class OperationWorkflowTransactionAdmin(OperationWorkflowMixin, admin.ModelAdmin
 
 class SupervisorWorkflowTransactionAdmin(SupervisorWorkflowMixin, admin.ModelAdmin):
     """Supervisor admin for workflow oversight"""
-    list_display = [
-        'transaction_code', 'user', 'kind', 'amount',
-        'get_workflow_status_display', 'get_workflow_progress',
-        'get_next_action_display', 'created_at'
-    ]
     list_filter = ['state', 'kind', 'created_at']
     search_fields = ['transaction_code', 'user__username']
     readonly_fields = ['transaction_code', 'created_at', 'applied']

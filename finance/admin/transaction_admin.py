@@ -8,19 +8,19 @@ from .workflow import WorkflowMixin
 
 @admin.register(Transaction)
 class TransactionAdmin(WorkflowMixin, admin.ModelAdmin):
-    list_display = ('transaction_code', 'id', 'user', 'kind', 'amount', 'exchange_rate', 'state', 'get_workflow_status_display', 'get_workflow_progress', 'get_next_action_display', 'applied', 'get_receipt_display', 'get_withdrawal_destination_display', 'get_persian_scheduled_for', 'get_persian_created_at')
+    list_display = ('transaction_code', 'id', 'user', 'kind', 'amount', 'get_source_account_display', 'get_destination_account_display', 'exchange_rate', 'state', 'get_workflow_status_display', 'get_workflow_progress', 'get_next_action_display', 'applied', 'get_receipt_display', 'get_withdrawal_destination_display', 'get_persian_scheduled_for', 'get_persian_created_at')
     list_filter = ('kind', 'state')
     search_fields = ('user__username',)
     actions = ['apply_transactions']
     form = TransactionAdminForm
     inlines = [TransactionStateLogInline]
-    readonly_fields = ('transaction_code', 'get_receipt_display', 'get_withdrawal_destination_display')
+    readonly_fields = ('transaction_code', 'get_receipt_display', 'get_withdrawal_destination_display', 'get_source_account_display', 'get_destination_account_display')
     fieldsets = (
         ('Basic Information', {
             'fields': ('transaction_code', 'user', 'kind', 'amount', 'state', 'scheduled_for')
         }),
         ('Account Information', {
-            'fields': ('source_account', 'destination_account', 'destination_deposit', 'exchange_rate', 'destination_amount', 'source_price_irr', 'dest_price_irr'),
+            'fields': ('get_source_account_display', 'get_destination_account_display', 'destination_deposit', 'exchange_rate', 'destination_amount', 'source_price_irr', 'dest_price_irr'),
             'description': 'Source and destination accounts for the transaction'
         }),
         ('Credit Increase Details', {
@@ -67,3 +67,4 @@ class TransactionAdmin(WorkflowMixin, admin.ModelAdmin):
                 applied += 1
         self.message_user(request, f"Applied {applied} transactions")
     apply_transactions.short_description = 'Apply selected transactions'
+

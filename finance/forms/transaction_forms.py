@@ -50,20 +50,38 @@ class TransactionAdminForm(forms.ModelForm):
                 
                 if kind == Transaction.KIND_CREDIT_INCREASE:
                     # Credit increase uses destination_account
-                    self.fields['destination_account'].queryset = rial_accounts
-                    self.fields['source_account'].queryset = Account.objects.none()
+                    if 'destination_account' in self.fields:
+                        self.fields['destination_account'].queryset = rial_accounts
+                    if 'source_account' in self.fields:
+                        self.fields['source_account'].queryset = Account.objects.none()
                 elif kind == Transaction.KIND_WITHDRAWAL_REQUEST:
                     # Withdrawal request uses source_account
-                    self.fields['source_account'].queryset = rial_accounts
-                    self.fields['destination_account'].queryset = Account.objects.none()
+                    if 'source_account' in self.fields:
+                        self.fields['source_account'].queryset = rial_accounts
+                    if 'destination_account' in self.fields:
+                        self.fields['destination_account'].queryset = Account.objects.none()
             else:
                 # For other transaction types, show all user accounts
-                self.fields['source_account'].queryset = user_accounts
-                self.fields['destination_account'].queryset = user_accounts
+                if 'source_account' in self.fields:
+                    self.fields['source_account'].queryset = user_accounts
+                    self.fields['source_account'].label_from_instance = self._account_label_from_instance
+                if 'destination_account' in self.fields:
+                    self.fields['destination_account'].queryset = user_accounts
+                    self.fields['destination_account'].label_from_instance = self._account_label_from_instance
         else:
             # No user selected, show all accounts (will be filtered by validation)
-            self.fields['source_account'].queryset = Account.objects.all()
-            self.fields['destination_account'].queryset = Account.objects.all()
+            if 'source_account' in self.fields:
+                self.fields['source_account'].queryset = Account.objects.all()
+                self.fields['source_account'].label_from_instance = self._account_label_from_instance
+            if 'destination_account' in self.fields:
+                self.fields['destination_account'].queryset = Account.objects.all()
+                self.fields['destination_account'].label_from_instance = self._account_label_from_instance
+
+    def _account_label_from_instance(self, obj):
+        """Custom label for account fields"""
+        if obj:
+            return f"{obj.name} ({obj.get_account_type_display()})"
+        return ""
 
     def clean(self):
         cleaned = super().clean()

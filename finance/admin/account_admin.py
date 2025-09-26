@@ -6,14 +6,14 @@ from ..models import Account, Transaction, AccountDailyBalance
 from .filters import ProfitCalculationFilter
 from ..utils import get_persian_date_display
 from .inlines import AccountTxnOutInline, AccountTxnInInline
-from .mixins import ProfitAccrualMixin, SnapshotMixin
+from .mixins import ProfitAccrualMixin, SnapshotMixin, CommonDisplayMixin
 
 
 # All inline classes are now imported from inlines.py
 
 
 @admin.register(Account)
-class AccountAdmin(ProfitAccrualMixin, SnapshotMixin, admin.ModelAdmin):
+class AccountAdmin(ProfitAccrualMixin, SnapshotMixin, CommonDisplayMixin, admin.ModelAdmin):
     list_display = ('id', 'user', 'name', 'get_kind', 'get_unit', 'initial_balance', 'balance_display', 'monthly_profit_rate', 'get_snapshot_count', 'get_persian_created_at', 'get_profit_start_date', 'get_next_profit_date', 'get_average_balance')
     list_filter = ('account_type', ProfitCalculationFilter)
     search_fields = ('user__username', 'name')
@@ -34,11 +34,6 @@ class AccountAdmin(ProfitAccrualMixin, SnapshotMixin, admin.ModelAdmin):
     )
     readonly_fields = ('get_profit_start_date', 'get_next_profit_date', 'get_average_balance')
 
-    def balance_display(self, obj):
-        """Display the current balance of the account"""
-        return f"${obj.balance:,.2f}"
-    balance_display.short_description = 'موجودی فعلی'
-    balance_display.admin_order_field = 'balance'
 
     def get_profit_start_date(self, obj):
         """Display when profit calculation started for this account"""

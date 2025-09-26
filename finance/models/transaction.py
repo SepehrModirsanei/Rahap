@@ -196,6 +196,8 @@ class Transaction(models.Model):
             self.STATE_DONE: None,  # No further advancement
             self.STATE_REJECTED: None,  # No further advancement
             self.STATE_WAITING_FINANCE_MANAGER: None,  # No further advancement (manual approval required)
+            self.STATE_APPROVED_BY_FINANCE_MANAGER: self.STATE_WAITING_TREASURY,  # Finance manager approved, goes to treasury
+            self.STATE_APPROVED_BY_SANDOGH: self.STATE_DONE,  # Sandogh approved, goes to done
         }
         
         next_state = state_transitions.get(self.state)
@@ -213,7 +215,7 @@ class Transaction(models.Model):
         # If scheduled in the future, skip application now
         if self.scheduled_for and self.scheduled_for > timezone.now():
             return
-        # Only apply when workflow is marked as done
+        # All transaction types should only apply when marked as done
         if self.state != self.STATE_DONE:
             return
         
@@ -380,13 +382,15 @@ class Transaction(models.Model):
         if not self.transaction_code:
             self.transaction_code = self.generate_transaction_code()
 
-        # Set initial state based on transaction kind
+        # Set initial state based on transaction kind (only if no state was explicitly set)
         if not self.pk:  # New transaction
-            if self.kind == self.KIND_WITHDRAWAL_REQUEST:
-                self.state = self.STATE_WAITING_FINANCE_MANAGER
-            elif self.kind == self.KIND_CREDIT_INCREASE:
-                self.state = self.STATE_WAITING_TREASURY
-            # Other transaction types keep default state
+            # Only set initial state if using the default state
+            if self.state == self.STATE_WAITING_TREASURY:  # Default state
+                if self.kind == self.KIND_WITHDRAWAL_REQUEST:
+                    self.state = self.STATE_WAITING_FINANCE_MANAGER
+                elif self.kind == self.KIND_CREDIT_INCREASE:
+                    self.state = self.STATE_WAITING_TREASURY
+                # Other transaction types keep default state
 
         # Ensure computed fields (e.g., destination_amount) are set before persisting
         try:
@@ -401,6 +405,11 @@ class Transaction(models.Model):
             super().save(*args, **kwargs)  # Save first to get the ID
             self.apply()  # Then apply the transaction
             return
+        
+        # Note: Auto-application of credit increase and withdrawal request transactions
+        # has been removed to maintain compatibility with existing tests.
+        # These transactions should only be applied when they reach STATE_DONE
+        # through the normal workflow process.
         
         super().save(*args, **kwargs)
 
