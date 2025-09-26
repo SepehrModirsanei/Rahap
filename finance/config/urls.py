@@ -21,8 +21,9 @@ from ..admin.supervisor import register_supervisor_admin
 from ..admin.sites import (
     treasury_admin_site,
     operation_admin_site,
-    readonly_admin_site_2,
-    finance_manager_admin_site
+    analytics_admin_site,
+    finance_manager_admin_site,
+    supervisor_admin_site
 )
 from ..views import UserViewSet, AccountViewSet, DepositViewSet, TransactionViewSet, get_user_accounts_for_admin
 from rest_framework.routers import DefaultRouter
@@ -65,7 +66,7 @@ urlpatterns = [
     path('admin/operations/', operation_admin_site.urls),
     path('admin/finance-manager/', finance_manager_admin_site.urls),
     path('admin/financial-overview/', supervisor_site.urls),
-    path('admin/analytics/', readonly_admin_site_2.urls),
+    path('admin/analytics/', analytics_admin_site.urls),
     
     # Default Django Admin (must come last due to catch-all pattern)
     path('admin/', admin.site.urls),

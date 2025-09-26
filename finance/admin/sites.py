@@ -18,6 +18,10 @@ from .workflow import (
 from .user_admin import UserAdmin
 from .account_admin import AccountAdmin
 from .analytics import analytics_admin_site
+from .authentication import (
+    TreasuryAdminSite, FinanceManagerAdminSite, OperationAdminSite,
+    SupervisorAdminSite, AnalyticsAdminSite
+)
 from ..models import User, Account, Deposit, Transaction, AccountDailyBalance, DepositDailyBalance, TransactionStateLog
 from ..models.transaction_proxies import (
     WithdrawalRequest, CreditIncrease, AccountTransfer, 
@@ -30,26 +34,18 @@ from .transaction_specialized_admin import (
 )
 
 
-# Create admin sites
-class TreasuryAdminSite(AdminSite):
-    site_header = "مدیریت خزانه‌داری"
-
-
-class FinanceManagerAdminSite(AdminSite):
-    site_header = "مدیریت مالی"
-    site_title = "مدیریت مالی"
-    index_title = "مدیریت کامل مالی"
-    site_url = "/admin/finance-manager/"
-
-treasury_admin_site = TreasuryAdminSite(name='treasury_admin')
+# Create authenticated admin sites
+treasury_admin_site = TreasuryAdminSite()
 
 # Register Treasury Admin with TreasuryMixin applied dynamically
 treasury_admin_site.register(User, type('TreasuryUserAdmin', (TreasuryMixin, UserAdmin), {}))
 treasury_admin_site.register(Account, type('TreasuryAccountAdmin', (TreasuryMixin, AccountAdmin), {}))
 treasury_admin_site.register(Deposit, type('TreasuryDepositAdmin', (TreasuryMixin, BaseDepositAdmin), {}))
-treasury_admin_site.register(Transaction, type('TreasuryTransactionAdmin', (TreasuryMixin, BaseTransactionAdmin), {}))
 treasury_admin_site.register(AccountDailyBalance, type('TreasuryAccountDailyBalanceAdmin', (TreasuryMixin, BaseAccountDailyBalanceAdmin), {}))
 treasury_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
+
+# Register Treasury Admin with Workflow Transaction Admin
+treasury_admin_site.register(Transaction, TreasuryWorkflowTransactionAdmin)
 
 # Register Specialized Transaction Admin Classes
 treasury_admin_site.register(WithdrawalRequest, WithdrawalRequestAdmin)
@@ -59,21 +55,17 @@ treasury_admin_site.register(ProfitTransaction, ProfitTransactionAdmin)
 treasury_admin_site.register(DepositTransaction, DepositTransactionAdmin)
 
 
-class OperationAdminSite(AdminSite):
-    site_header = "مدیریت عملیات"
-    site_title = "مدیریت عملیات"
-    index_title = "مدیریت عملیات روزانه"
-    site_url = "/admin/operations/"
-
-operation_admin_site = OperationAdminSite(name='operation_admin')
+operation_admin_site = OperationAdminSite()
 
 # Register Operation Admin with OperationMixin applied dynamically
 operation_admin_site.register(User, type('OperationUserAdmin', (OperationMixin, UserAdmin), {}))
 operation_admin_site.register(Account, type('OperationAccountAdmin', (OperationMixin, AccountAdmin), {}))
 operation_admin_site.register(Deposit, type('OperationDepositAdmin', (OperationMixin, BaseDepositAdmin), {}))
-operation_admin_site.register(Transaction, type('OperationTransactionAdmin', (OperationMixin, BaseTransactionAdmin), {}))
 operation_admin_site.register(AccountDailyBalance, type('OperationAccountDailyBalanceAdmin', (OperationMixin, BaseAccountDailyBalanceAdmin), {}))
 operation_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
+
+# Register Operation Admin with Workflow Transaction Admin
+operation_admin_site.register(Transaction, OperationWorkflowTransactionAdmin)
 
 # Register Specialized Transaction Admin Classes
 operation_admin_site.register(WithdrawalRequest, WithdrawalRequestAdmin)
@@ -84,7 +76,7 @@ operation_admin_site.register(DepositTransaction, DepositTransactionAdmin)
 
 
 # Finance Manager Admin Site
-finance_manager_admin_site = FinanceManagerAdminSite(name='finance_manager_admin')
+finance_manager_admin_site = FinanceManagerAdminSite()
 
 # Register Finance Manager Admin with workflow
 finance_manager_admin_site.register(User, type('FinanceManagerUserAdmin', (ReadOnlyMixin, UserAdmin), {}))
@@ -94,16 +86,14 @@ finance_manager_admin_site.register(Transaction, FinanceManagerWorkflowTransacti
 finance_manager_admin_site.register(AccountDailyBalance, type('FinanceManagerAccountDailyBalanceAdmin', (ReadOnlyMixin, BaseAccountDailyBalanceAdmin), {}))
 finance_manager_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
 
+# Register Specialized Transaction Admin Classes for Finance Manager
+finance_manager_admin_site.register(WithdrawalRequest, WithdrawalRequestAdmin)
+finance_manager_admin_site.register(CreditIncrease, CreditIncreaseAdmin)
+finance_manager_admin_site.register(AccountTransfer, AccountTransferAdmin)
+finance_manager_admin_site.register(ProfitTransaction, ProfitTransactionAdmin)
+finance_manager_admin_site.register(DepositTransaction, DepositTransactionAdmin)
+
 # Sandogh functionality is now part of Treasury Admin
-
-# Update existing admin sites to use workflow
-# Treasury Admin Site - Update to use workflow
-treasury_admin_site.unregister(Transaction)
-treasury_admin_site.register(Transaction, TreasuryWorkflowTransactionAdmin)
-
-# Operation Admin Site - Update to use workflow  
-operation_admin_site.unregister(Transaction)
-operation_admin_site.register(Transaction, OperationWorkflowTransactionAdmin)
 
 # Financial Overview is now handled by supervisor.py
 # Use supervisor admin classes for financial overview functionality
@@ -111,5 +101,12 @@ operation_admin_site.register(Transaction, OperationWorkflowTransactionAdmin)
 # Use the analytics admin site from analytics.py which has the custom dashboard
 # Analytics admin site is already created and registered in analytics.py
 
-# For backward compatibility
-readonly_admin_site_2 = analytics_admin_site
+# Supervisor Admin Site
+supervisor_admin_site = SupervisorAdminSite()
+
+# Register Supervisor Admin with read-only access
+from .supervisor import register_supervisor_admin
+register_supervisor_admin(supervisor_admin_site)
+
+# Expose analytics admin site under the canonical name
+analytics_admin_site = analytics_admin_site

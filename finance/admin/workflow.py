@@ -252,6 +252,10 @@ class OperationWorkflowMixin(OperationMixin, WorkflowMixin):
         moved = 0
         for txn in queryset:
             if txn.state == Transaction.STATE_APPROVED_BY_SANDOGH:
+                # Enforce receipt for withdrawal requests when moving to DONE (step 4 -> 5)
+                if txn.kind == Transaction.KIND_WITHDRAWAL_REQUEST and not txn.receipt:
+                    self.message_user(request, f"رسید برای اتمام درخواست برداشت {txn.transaction_code} الزامی است.", level=messages.ERROR)
+                    continue
                 txn.state = Transaction.STATE_DONE
                 txn._changed_by = request.user
                 txn.save()

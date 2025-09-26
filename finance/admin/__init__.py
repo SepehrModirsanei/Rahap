@@ -39,7 +39,7 @@ from .transaction_specialized_admin import (
 from .sites import (
     treasury_admin_site,
     operation_admin_site,
-    readonly_admin_site_2
+    analytics_admin_site
 )
 from .analytics import analytics_admin_site
 
@@ -103,7 +103,7 @@ __all__ = [
     # Admin sites
     'treasury_admin_site',
     'operation_admin_site',
-    'readonly_admin_site_2',
+    'analytics_admin_site',
     'analytics_admin_site',
     
     # Supervisor admin
