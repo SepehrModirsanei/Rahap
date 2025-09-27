@@ -12,15 +12,13 @@ class Command(BaseCommand):
         today = timezone.now().date()
         created = 0
         for acc in Account.objects.all():
+            # Calculate next snapshot number before creating the object
+            next_num = AccountDailyBalance.objects.filter(account=acc).count() + 1
             obj, was_created = AccountDailyBalance.objects.get_or_create(
                 account=acc, snapshot_date=today,
-                defaults={'balance': Decimal(acc.balance)}
+                defaults={'balance': Decimal(acc.balance), 'snapshot_number': next_num}
             )
             if was_created:
-                # Assign next snapshot number for this account
-                next_num = AccountDailyBalance.objects.filter(account=acc).count()
-                obj.snapshot_number = next_num
-                obj.save(update_fields=['snapshot_number'])
                 created += 1
         self.stdout.write(self.style.SUCCESS(f'Created {created} account snapshot(s) for {today}'))
 

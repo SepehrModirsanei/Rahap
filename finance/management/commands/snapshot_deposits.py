@@ -16,15 +16,13 @@ class Command(BaseCommand):
         today = now_iran.date()
         created = 0
         for deposit in Deposit.objects.all():
+            # Calculate next snapshot number before creating the object
+            from finance.models import DepositDailyBalance as DDB
+            next_num = DDB.objects.filter(deposit=deposit).count() + 1
             obj, was_created = DepositDailyBalance.objects.get_or_create(
                 deposit=deposit, snapshot_date=today,
-                defaults={'balance': Decimal(deposit.balance)}
+                defaults={'balance': Decimal(deposit.balance), 'snapshot_number': next_num}
             )
             if was_created:
-                # Assign next snapshot number for this deposit
-                from finance.models import DepositDailyBalance as DDB
-                next_num = DDB.objects.filter(deposit=deposit).count()
-                obj.snapshot_number = next_num
-                obj.save(update_fields=['snapshot_number'])
                 created += 1
         self.stdout.write(self.style.SUCCESS(f'Created {created} deposit snapshot(s) for {today}'))
