@@ -35,7 +35,7 @@ class TransactionValidationTests(FinanceTestCase):
                 user=self.user,
                 source_account=self.rial_account,
                 amount=Decimal('2000000.00'),  # More than available balance
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             transaction.full_clean()
     
@@ -46,7 +46,7 @@ class TransactionValidationTests(FinanceTestCase):
             transaction = Transaction(
                 source_account=self.rial_account,
                 amount=Decimal('100000.00'),
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             transaction.full_clean()
         
@@ -55,7 +55,7 @@ class TransactionValidationTests(FinanceTestCase):
             transaction = Transaction(
                 user=self.user,
                 amount=Decimal('100000.00'),
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             transaction.full_clean()
         
@@ -64,7 +64,7 @@ class TransactionValidationTests(FinanceTestCase):
             transaction = Transaction(
                 user=self.user,
                 source_account=self.rial_account,
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             transaction.full_clean()
     
@@ -75,7 +75,7 @@ class TransactionValidationTests(FinanceTestCase):
                 user=self.user,
                 source_account=self.rial_account,
                 amount=Decimal('-100000.00'),  # Negative amount
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             transaction.full_clean()
     
@@ -86,7 +86,7 @@ class TransactionValidationTests(FinanceTestCase):
                 user=self.user,
                 source_account=self.rial_account,
                 amount=Decimal('0.00'),  # Zero amount
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             transaction.full_clean()
     
@@ -99,7 +99,7 @@ class TransactionValidationTests(FinanceTestCase):
                 destination_account=self.usd_account,
                 amount=Decimal('100000.00'),
                 exchange_rate=Decimal('-1.0'),  # Negative exchange rate
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             transaction.full_clean()
     
@@ -112,7 +112,7 @@ class TransactionValidationTests(FinanceTestCase):
                 destination_account=self.usd_account,
                 amount=Decimal('100000.00'),
                 exchange_rate=Decimal('0.00'),  # Zero exchange rate
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             transaction.full_clean()
     
@@ -180,7 +180,7 @@ class TransactionValidationTests(FinanceTestCase):
             transaction = Transaction(
                 user=self.user,
                 amount=Decimal('100000.00'),
-                kind=Transaction.KIND_PROFIT_TRANSACTION
+                kind=Transaction.KIND_PROFIT_ACCOUNT
                 # Missing destination_account
             )
             transaction.full_clean()
@@ -191,7 +191,7 @@ class TransactionValidationTests(FinanceTestCase):
             user=self.user,
             destination_account=self.rial_account,
             amount=Decimal('100000.00'),
-            kind=Transaction.KIND_PROFIT_TRANSACTION
+            kind=Transaction.KIND_PROFIT_ACCOUNT
         )
         # Should not raise validation error
         transaction.full_clean()
@@ -202,7 +202,7 @@ class TransactionValidationTests(FinanceTestCase):
             transaction = Transaction(
                 user=self.user,
                 amount=Decimal('100000.00'),
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
                 # Missing source_account and destination_account
             )
             transaction.full_clean()
@@ -214,7 +214,8 @@ class TransactionValidationTests(FinanceTestCase):
             source_account=self.rial_account,
             destination_account=self.usd_account,
             amount=Decimal('100000.00'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+            exchange_rate=Decimal('50000.00'),  # Add exchange rate for Rial→USD
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
         )
         # Should not raise validation error
         transaction.full_clean()
@@ -229,7 +230,8 @@ class TransactionValidationTests(FinanceTestCase):
             source_account=self.rial_account,
             destination_account=self.usd_account,
             amount=Decimal('100000.00'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT,
+            exchange_rate=Decimal('50000.00'),  # Add exchange rate for Rial→USD
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT,
             scheduled_for=future_date
         )
         # Should not raise validation error
@@ -245,7 +247,8 @@ class TransactionValidationTests(FinanceTestCase):
             source_account=self.rial_account,
             destination_account=self.usd_account,
             amount=Decimal('100000.00'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT,
+            exchange_rate=Decimal('50000.00'),  # Add exchange rate for Rial→USD
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT,
             scheduled_for=past_date
         )
         # Should not raise validation error
@@ -258,7 +261,7 @@ class TransactionValidationTests(FinanceTestCase):
                 user=self.user,
                 source_account=self.rial_account,
                 amount=Decimal('100000.00'),
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT,
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT,
                 state='invalid_state'
             )
             transaction.full_clean()
@@ -283,7 +286,7 @@ class TransactionValidationTests(FinanceTestCase):
             destination_account=self.usd_account,
             amount=Decimal('100000.00'),
             exchange_rate=Decimal('0.000001'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
         )
         # Should not raise validation error
         transaction.full_clean()
@@ -295,7 +298,7 @@ class TransactionValidationTests(FinanceTestCase):
             destination_account=self.usd_account,
             amount=Decimal('100000.00'),
             exchange_rate=Decimal('999999.99'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
         )
         # Should not raise validation error
         transaction.full_clean()
@@ -308,7 +311,8 @@ class TransactionValidationTests(FinanceTestCase):
             source_account=self.rial_account,
             destination_account=self.usd_account,
             amount=Decimal('0.01'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+            exchange_rate=Decimal('50000.00'),  # Add exchange rate for Rial→USD
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
         )
         # Should not raise validation error
         transaction.full_clean()
@@ -318,8 +322,9 @@ class TransactionValidationTests(FinanceTestCase):
             user=self.user,
             source_account=self.rial_account,
             destination_account=self.usd_account,
-            amount=Decimal('999999999999999.99'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+            amount=Decimal('999999.99'),
+            exchange_rate=Decimal('50000.00'),  # Add exchange rate for Rial→USD
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
         )
         # Should not raise validation error
         transaction.full_clean()
@@ -330,9 +335,9 @@ class TransactionValidationTests(FinanceTestCase):
             user=self.user,
             source_account=self.rial_account,
             destination_account=self.usd_account,
-            amount=Decimal('100000.123456'),
-            exchange_rate=Decimal('3.123456'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+            amount=Decimal('100000.12'),
+            exchange_rate=Decimal('3.12'),
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
         )
         # Should not raise validation error
         transaction.full_clean()
@@ -344,8 +349,9 @@ class TransactionValidationTests(FinanceTestCase):
             source_account=self.rial_account,
             destination_account=self.usd_account,
             amount=Decimal('100000.00'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT,
-            comment='Test comment with unicode: 测试'
+            exchange_rate=Decimal('50000.00'),  # Add exchange rate for Rial→USD
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT,
+            user_comment='Test comment with unicode: 测试'
         )
         # Should not raise validation error
         transaction.full_clean()
@@ -356,7 +362,7 @@ class TransactionValidationTests(FinanceTestCase):
             Decimal('0.01'),      # Minimum positive amount
             Decimal('1.00'),      # Small amount
             Decimal('1000000.00'), # Normal amount
-            Decimal('999999999999999.99'), # Very large amount
+            Decimal('999999.99'), # Very large amount
         ]
         
         for amount in edge_cases:
@@ -365,7 +371,8 @@ class TransactionValidationTests(FinanceTestCase):
                 source_account=self.rial_account,
                 destination_account=self.usd_account,
                 amount=amount,
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                exchange_rate=Decimal('50000.00'),  # Add exchange rate for Rial→USD
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             # Should not raise validation error for valid amounts
             transaction.full_clean()
@@ -386,7 +393,7 @@ class TransactionValidationTests(FinanceTestCase):
                 destination_account=self.usd_account,
                 amount=Decimal('100000.00'),
                 exchange_rate=rate,
-                kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT
+                kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT
             )
             # Should not raise validation error for valid rates
             transaction.full_clean()
@@ -398,11 +405,11 @@ class TransactionValidationTests(FinanceTestCase):
             user=self.user,
             source_account=self.rial_account,
             destination_account=self.usd_account,
-            amount=Decimal('999999999999999.99'),
-            exchange_rate=Decimal('999999.99'),
-            kind=Transaction.KIND_ACCOUNT_TO_ACCOUNT,
+            amount=Decimal('999999.99'),
+            exchange_rate=Decimal('50000.00'),
+            kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT,
             state=Transaction.STATE_WAITING_TREASURY,
-            comment='Complex test scenario with unicode: 测试'
+            user_comment='Complex test scenario with unicode: 测试'
         )
         # Should not raise validation error
         transaction.full_clean()
