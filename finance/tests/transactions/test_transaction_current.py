@@ -90,7 +90,8 @@ class TransactionCurrentTests(TestCase):
             amount=Decimal('100.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
             state=Transaction.STATE_DONE,
-            withdrawal_card_number='1234567890123456'
+            withdrawal_card_number='1234567890123456',
+            receipt='receipts/test_receipt.jpg'  # Add receipt for STATE_DONE
         )
         
         # Should not raise ValidationError
@@ -157,7 +158,8 @@ class TransactionCurrentTests(TestCase):
             amount=Decimal('300.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
             state=Transaction.STATE_DONE,
-            withdrawal_card_number='1234567890123456'
+            withdrawal_card_number='1234567890123456',
+            receipt='receipts/test_receipt.jpg'  # Add receipt for STATE_DONE
         )
         txn.apply()
         
@@ -210,7 +212,8 @@ class TransactionCurrentTests(TestCase):
             amount=Decimal('150.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
             state=Transaction.STATE_DONE,
-            withdrawal_card_number='1234567890123456'
+            withdrawal_card_number='1234567890123456',
+            receipt='receipts/test_receipt.jpg'  # Add receipt for STATE_DONE
         )
         txn1.apply()
         
@@ -220,7 +223,8 @@ class TransactionCurrentTests(TestCase):
             amount=Decimal('250.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
             state=Transaction.STATE_DONE,
-            withdrawal_sheba_number='IR1234567890123456789012'
+            withdrawal_sheba_number='IR1234567890123456789012',
+            receipt='receipts/test_receipt2.jpg'  # Add receipt for STATE_DONE
         )
         txn2.apply()
         
@@ -258,7 +262,8 @@ class TransactionCurrentTests(TestCase):
             amount=Decimal('400.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
             state=Transaction.STATE_DONE,
-            withdrawal_card_number='1234567890123456'
+            withdrawal_card_number='1234567890123456',
+            receipt='receipts/test_receipt.jpg'  # Add receipt for STATE_DONE
         )
         withdrawal_txn.apply()
         

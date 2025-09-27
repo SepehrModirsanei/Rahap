@@ -39,8 +39,8 @@ class DepositProfitInfoTests(FinanceTestCase):
         # Test profit calculation info
         profit_info = deposit.get_profit_calculation_info()
         self.assertIsNotNone(profit_info)
-        self.assertIn('profit_rate', profit_info)
-        self.assertIn('next_transfer_date', profit_info)
+        self.assertIn('میانگین:', profit_info)
+        self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_different_kinds(self):
         """Test deposit profit calculation info with different profit kinds"""
@@ -56,8 +56,8 @@ class DepositProfitInfoTests(FinanceTestCase):
             
             profit_info = deposit.get_profit_calculation_info()
             self.assertIsNotNone(profit_info)
-            self.assertIn('profit_rate', profit_info)
-            self.assertIn('next_transfer_date', profit_info)
+            self.assertIn('میانگین:', profit_info)
+            self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_last_accrual(self):
         """Test deposit profit calculation info with last accrual date"""
@@ -70,8 +70,8 @@ class DepositProfitInfoTests(FinanceTestCase):
         
         profit_info = deposit.get_profit_calculation_info()
         self.assertIsNotNone(profit_info)
-        self.assertIn('profit_rate', profit_info)
-        self.assertIn('next_transfer_date', profit_info)
+        self.assertIn('میانگین:', profit_info)
+        self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_zero_balance(self):
         """Test deposit profit calculation info with zero balance"""
@@ -83,8 +83,8 @@ class DepositProfitInfoTests(FinanceTestCase):
         
         profit_info = deposit.get_profit_calculation_info()
         self.assertIsNotNone(profit_info)
-        self.assertIn('profit_rate', profit_info)
-        self.assertIn('next_transfer_date', profit_info)
+        self.assertIn('میانگین:', profit_info)
+        self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_none_values(self):
         """Test deposit profit calculation info with none values"""
@@ -97,8 +97,8 @@ class DepositProfitInfoTests(FinanceTestCase):
         
         profit_info = deposit.get_profit_calculation_info()
         self.assertIsNotNone(profit_info)
-        self.assertIn('profit_rate', profit_info)
-        self.assertIn('next_transfer_date', profit_info)
+        self.assertIn('میانگین:', profit_info)
+        self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_edge_cases(self):
         """Test deposit profit calculation info with edge cases"""
@@ -117,8 +117,8 @@ class DepositProfitInfoTests(FinanceTestCase):
             
             profit_info = deposit.get_profit_calculation_info()
             self.assertIsNotNone(profit_info)
-            self.assertIn('profit_rate', profit_info)
-            self.assertIn('next_transfer_date', profit_info)
+            self.assertIn('میانگین:', profit_info)
+            self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_zero_profit_rate(self):
         """Test deposit profit calculation info with zero profit rate"""
@@ -130,8 +130,8 @@ class DepositProfitInfoTests(FinanceTestCase):
         
         profit_info = deposit.get_profit_calculation_info()
         self.assertIsNotNone(profit_info)
-        self.assertIn('profit_rate', profit_info)
-        self.assertIn('next_transfer_date', profit_info)
+        self.assertIn('میانگین:', profit_info)
+        self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_very_small_profit_rate(self):
         """Test deposit profit calculation info with very small profit rate"""
@@ -143,8 +143,8 @@ class DepositProfitInfoTests(FinanceTestCase):
         
         profit_info = deposit.get_profit_calculation_info()
         self.assertIsNotNone(profit_info)
-        self.assertIn('profit_rate', profit_info)
-        self.assertIn('next_transfer_date', profit_info)
+        self.assertIn('میانگین:', profit_info)
+        self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_very_large_profit_rate(self):
         """Test deposit profit calculation info with very large profit rate"""
@@ -156,8 +156,8 @@ class DepositProfitInfoTests(FinanceTestCase):
         
         profit_info = deposit.get_profit_calculation_info()
         self.assertIsNotNone(profit_info)
-        self.assertIn('profit_rate', profit_info)
-        self.assertIn('next_transfer_date', profit_info)
+        self.assertIn('میانگین:', profit_info)
+        self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_different_breakage_coefficients(self):
         """Test deposit profit calculation info with different breakage coefficients"""
@@ -173,8 +173,8 @@ class DepositProfitInfoTests(FinanceTestCase):
             
             profit_info = deposit.get_profit_calculation_info()
             self.assertIsNotNone(profit_info)
-            self.assertIn('profit_rate', profit_info)
-            self.assertIn('next_transfer_date', profit_info)
+            self.assertIn('میانگین:', profit_info)
+            self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_different_profit_kinds(self):
         """Test deposit profit calculation info with different profit kinds"""
@@ -190,8 +190,8 @@ class DepositProfitInfoTests(FinanceTestCase):
             
             profit_info = deposit.get_profit_calculation_info()
             self.assertIsNotNone(profit_info)
-            self.assertIn('profit_rate', profit_info)
-            self.assertIn('next_transfer_date', profit_info)
+            self.assertIn('میانگین:', profit_info)
+            self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_different_balances(self):
         """Test deposit profit calculation info with different balances"""
@@ -206,8 +206,8 @@ class DepositProfitInfoTests(FinanceTestCase):
             
             profit_info = deposit.get_profit_calculation_info()
             self.assertIsNotNone(profit_info)
-            self.assertIn('profit_rate', profit_info)
-            self.assertIn('next_transfer_date', profit_info)
+            self.assertIn('میانگین:', profit_info)
+            self.assertIn('سود بعدی:', profit_info)
     
     def test_deposit_profit_calculation_info_with_different_profit_rates(self):
         """Test deposit profit calculation info with different profit rates"""
@@ -222,5 +222,5 @@ class DepositProfitInfoTests(FinanceTestCase):
             
             profit_info = deposit.get_profit_calculation_info()
             self.assertIsNotNone(profit_info)
-            self.assertIn('profit_rate', profit_info)
-            self.assertIn('next_transfer_date', profit_info)
+            self.assertIn('میانگین:', profit_info)
+            self.assertIn('سود بعدی:', profit_info)
