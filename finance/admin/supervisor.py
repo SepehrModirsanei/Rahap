@@ -5,8 +5,8 @@ This module contains admin classes for supervisor/oversight functionality.
 """
 
 from django.contrib import admin
-from ..models import Account, Deposit
-from .base import BaseAccountAdmin, BaseDepositAdmin
+from ..models import Account, Deposit, DepositDailyBalance
+from .base import BaseAccountAdmin, BaseDepositAdmin, BaseDepositDailyBalanceAdmin
 from .mixins import ReadOnlyMixin
 from ..utils import get_persian_date_display
 
@@ -35,7 +35,13 @@ class DepositSupervisorAdmin(ReadOnlyMixin, BaseDepositAdmin):
     last_profit_accrual_at_display.short_description = 'آخرین سود'
 
 
+class DepositDailyBalanceSupervisorAdmin(ReadOnlyMixin, BaseDepositDailyBalanceAdmin):
+    """Supervisor admin for DepositDailyBalance model with oversight functionality"""
+    pass
+
+
 def register_supervisor_admin(site: admin.AdminSite):
     """Register supervisor admin classes with a site"""
     site.register(Account, AccountSupervisorAdmin)
     site.register(Deposit, DepositSupervisorAdmin)
+    site.register(DepositDailyBalance, DepositDailyBalanceSupervisorAdmin)

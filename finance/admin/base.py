@@ -7,7 +7,7 @@ by different admin sites to reduce code duplication.
 
 from django.contrib import admin
 from decimal import Decimal
-from ..models import User, Account, Deposit, Transaction, AccountDailyBalance
+from ..models import User, Account, Deposit, Transaction, AccountDailyBalance, DepositDailyBalance
 from ..forms import TransactionAdminForm
 from .inlines import AccountTxnOutInline, AccountTxnInInline, DepositTxnInInline, TransactionStateLogInline
 from .mixins import CommonDisplayMixin
@@ -125,6 +125,30 @@ class BaseAccountDailyBalanceAdmin(CommonDisplayMixin, admin.ModelAdmin):
         except Exception:
             return '-'
     get_account_name.short_description = 'نام حساب'
+
+
+class BaseDepositDailyBalanceAdmin(CommonDisplayMixin, admin.ModelAdmin):
+    """Base admin class for DepositDailyBalance model"""
+    list_display = ('deposit', 'get_persian_snapshot_date', 'balance_display', 'snapshot_number')
+    list_filter = ('snapshot_date',)
+    search_fields = ('deposit__user__username',)
+    readonly_fields = ('deposit', 'snapshot_date', 'balance', 'snapshot_number', 'get_persian_snapshot_date')
+    ordering = ['-snapshot_date']
+    
+    def get_persian_snapshot_date(self, obj):
+        """Display Persian snapshot date"""
+        return obj.get_persian_snapshot_date()
+    get_persian_snapshot_date.short_description = 'تاریخ'
+    get_persian_snapshot_date.admin_order_field = 'snapshot_date'
+    
+    fieldsets = (
+        ('اطلاعات سپرده', {
+            'fields': ('deposit',)
+        }),
+        ('اطلاعات موجودی', {
+            'fields': ('snapshot_date', 'get_persian_snapshot_date', 'balance', 'snapshot_number')
+        }),
+    )
 
 
 # Import mixins from the dedicated mixins module

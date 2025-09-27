@@ -8,7 +8,7 @@ to eliminate duplication and provide consistent functionality.
 from django.contrib import admin
 from django.contrib.admin import AdminSite
 from .base import (
-    BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin
+    BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin, BaseDepositDailyBalanceAdmin
 )
 from .mixins import ReadOnlyMixin, TreasuryMixin, OperationMixin
 from .workflow import (
@@ -42,6 +42,7 @@ treasury_admin_site.register(User, type('TreasuryUserAdmin', (TreasuryMixin, Use
 treasury_admin_site.register(Account, type('TreasuryAccountAdmin', (TreasuryMixin, AccountAdmin), {}))
 treasury_admin_site.register(Deposit, type('TreasuryDepositAdmin', (TreasuryMixin, BaseDepositAdmin), {}))
 treasury_admin_site.register(AccountDailyBalance, type('TreasuryAccountDailyBalanceAdmin', (TreasuryMixin, BaseAccountDailyBalanceAdmin), {}))
+treasury_admin_site.register(DepositDailyBalance, type('TreasuryDepositDailyBalanceAdmin', (TreasuryMixin, BaseDepositDailyBalanceAdmin), {}))
 treasury_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
 
 # Register Treasury Admin with Workflow Transaction Admin
@@ -62,6 +63,7 @@ operation_admin_site.register(User, type('OperationUserAdmin', (OperationMixin, 
 operation_admin_site.register(Account, type('OperationAccountAdmin', (OperationMixin, AccountAdmin), {}))
 operation_admin_site.register(Deposit, type('OperationDepositAdmin', (OperationMixin, BaseDepositAdmin), {}))
 operation_admin_site.register(AccountDailyBalance, type('OperationAccountDailyBalanceAdmin', (OperationMixin, BaseAccountDailyBalanceAdmin), {}))
+operation_admin_site.register(DepositDailyBalance, type('OperationDepositDailyBalanceAdmin', (OperationMixin, BaseDepositDailyBalanceAdmin), {}))
 operation_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
 
 # Register Operation Admin with Workflow Transaction Admin
@@ -84,6 +86,7 @@ finance_manager_admin_site.register(Account, type('FinanceManagerAccountAdmin', 
 finance_manager_admin_site.register(Deposit, type('FinanceManagerDepositAdmin', (ReadOnlyMixin, BaseDepositAdmin), {}))
 finance_manager_admin_site.register(Transaction, FinanceManagerWorkflowTransactionAdmin)
 finance_manager_admin_site.register(AccountDailyBalance, type('FinanceManagerAccountDailyBalanceAdmin', (ReadOnlyMixin, BaseAccountDailyBalanceAdmin), {}))
+finance_manager_admin_site.register(DepositDailyBalance, type('FinanceManagerDepositDailyBalanceAdmin', (ReadOnlyMixin, BaseDepositDailyBalanceAdmin), {}))
 finance_manager_admin_site.register(TransactionStateLog, TransactionStateLogAdmin)
 
 # Register Specialized Transaction Admin Classes for Finance Manager
