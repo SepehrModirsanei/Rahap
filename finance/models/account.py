@@ -151,7 +151,7 @@ class Account(models.Model):
         for snap in snapshots:
             d = snap.snapshot_date
             if d > prev_date:
-                segments.append((prev_date, d, Decimal(snap.balance) if False else prev_balance))
+                segments.append((prev_date, d, Decimal(snap.balance)))
             prev_date = d
             prev_balance = Decimal(snap.balance)
         # Last segment until period_end
