@@ -57,7 +57,9 @@ class Deposit(models.Model):
     @property
     def balance(self):
         """Calculate current balance based on initial balance and all transactions"""
-        from .transaction import Transaction
+        # Use apps.get_model to avoid circular imports
+        from django.apps import apps
+        Transaction = apps.get_model('finance', 'Transaction')
         # Get all transactions that affect this deposit
         incoming = Transaction.objects.filter(
             destination_deposit=self,
@@ -145,7 +147,9 @@ class Deposit(models.Model):
             )
         
         # Create and apply profit transaction
-        from .transaction import Transaction
+        # Use apps.get_model to avoid circular imports
+        from django.apps import apps
+        Transaction = apps.get_model('finance', 'Transaction')
         profit_transaction = Transaction.objects.create(
             user=self.user,
             source_account=None,

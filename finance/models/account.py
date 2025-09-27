@@ -65,65 +65,43 @@ class Account(models.Model):
     @property
     def balance(self):
         """Calculate current balance based on initial balance and all transactions"""
-        from .transaction import Transaction
+        from django.db.models import Sum, Case, When, F, Q
         
-        # Get all transactions that affect this account
-        incoming_txns = Transaction.objects.filter(
+        # Optimized: Use database aggregation instead of Python loops
+        # Use apps.get_model to avoid circular imports
+        from django.apps import apps
+        Transaction = apps.get_model('finance', 'Transaction')
+        
+        # Calculate incoming amount using database aggregation
+        incoming_result = Transaction.objects.filter(
             destination_account=self,
             applied=True
+        ).aggregate(
+            total=Sum(
+                Case(
+                    # For account-to-account transfers, use destination_amount if available
+                    When(
+                        kind=Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT,
+                        destination_account=self,
+                        destination_amount__isnull=False,
+                        then=F('destination_amount')
+                    ),
+                    # Otherwise use regular amount
+                    default=F('amount')
+                )
+            )
         )
         
-        outgoing_txns = Transaction.objects.filter(
+        # Calculate outgoing amount using database aggregation
+        outgoing_result = Transaction.objects.filter(
             source_account=self,
             applied=True
+        ).aggregate(
+            total=Sum('amount')
         )
         
-        # Helpers
-        def is_foreign_type(acc_type: str) -> bool:
-            return acc_type in [
-                self.ACCOUNT_TYPE_USD,
-                self.ACCOUNT_TYPE_EUR,
-                self.ACCOUNT_TYPE_GBP,
-            ]
-
-        # Calculate incoming amount using stored destination_amount for cross-currency transfers
-        incoming_total = Decimal('0')
-        for txn in incoming_txns:
-            if txn.kind == Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
-                if txn.destination_account_id == self.id:
-                    # Use the pre-computed destination_amount for the destination leg
-                    if txn.destination_amount is not None:
-                        incoming_total += Decimal(txn.destination_amount)
-                    else:
-                        incoming_total += Decimal(txn.amount)
-                else:
-                    incoming_total += Decimal(txn.amount)
-            elif txn.kind == Transaction.KIND_CREDIT_INCREASE:
-                # Credit increase adds money directly to this account
-                incoming_total += Decimal(txn.amount)
-            elif txn.kind == Transaction.KIND_PROFIT_DEPOSIT_TO_ACCOUNT:
-                # Profit from deposit goes to this account
-                incoming_total += Decimal(txn.amount)
-            else:
-                # Other transaction types
-                incoming_total += Decimal(txn.amount)
-        
-        # Calculate outgoing amount (always in this account's currency)
-        outgoing_total = Decimal('0')
-        for txn in outgoing_txns:
-            if txn.kind == Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT:
-                # For account-to-account transfers, the source account loses the amount in its own currency
-                # No conversion needed for outgoing amount - it's always in the source account's currency
-                outgoing_total += Decimal(txn.amount)
-            elif txn.kind == Transaction.KIND_WITHDRAWAL_REQUEST:
-                # Withdrawal request removes money from this account
-                outgoing_total += Decimal(txn.amount)
-            elif txn.kind == Transaction.KIND_ACCOUNT_TO_DEPOSIT_INITIAL:
-                # Account to deposit initial removes money from this account
-                outgoing_total += Decimal(txn.amount)
-            else:
-                # Other transaction types
-                outgoing_total += Decimal(txn.amount)
+        incoming_total = incoming_result['total'] or Decimal('0')
+        outgoing_total = outgoing_result['total'] or Decimal('0')
         
         return self.initial_balance + incoming_total - outgoing_total
 
@@ -174,7 +152,9 @@ class Account(models.Model):
             return
         
         # Create profit transaction instead of directly modifying balance
-        from .transaction import Transaction
+        # Use apps.get_model to avoid circular imports
+        from django.apps import apps
+        Transaction = apps.get_model('finance', 'Transaction')
         profit_transaction = Transaction.objects.create(
             user=self.user,
             source_account=None,

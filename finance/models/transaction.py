@@ -30,11 +30,11 @@ class Transaction(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='transactions', verbose_name=_('کاربر'))
     # Unique transaction code for easy identification
     transaction_code = models.CharField(max_length=64, unique=True, editable=False, null=True, blank=True, verbose_name=_('کد تراکنش'))
-    source_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='outgoing_account_transactions', verbose_name=_('حساب مبدا'))
-    destination_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_account_transactions', verbose_name=_('حساب مقصد'))
-    destination_deposit = models.ForeignKey('Deposit', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_deposit_transactions', verbose_name=_('سپرده مقصد'))
+    source_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='outgoing_account_transactions', verbose_name=_('حساب مبدا'), db_index=True)
+    destination_account = models.ForeignKey('Account', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_account_transactions', verbose_name=_('حساب مقصد'), db_index=True)
+    destination_deposit = models.ForeignKey('Deposit', null=True, blank=True, on_delete=models.SET_NULL, related_name='incoming_deposit_transactions', verbose_name=_('سپرده مقصد'), db_index=True)
     amount = models.DecimalField(max_digits=18, decimal_places=2, validators=[MinValueValidator(0)], verbose_name=_('مبلغ'))
-    kind = models.CharField(max_length=40, choices=KIND_CHOICES, verbose_name=_('نوع'))
+    kind = models.CharField(max_length=40, choices=KIND_CHOICES, verbose_name=_('نوع'), db_index=True)
     # Exchange rate to convert between different currency accounts
     # For cross-currency transfers: destination_amount = source_amount * exchange_rate
     exchange_rate = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('نرخ تبدیل'))
@@ -44,7 +44,7 @@ class Transaction(models.Model):
     source_price_irr = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('قیمت ارز مبدا بر حسب ریال'))
     dest_price_irr = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, verbose_name=_('قیمت ارز مقصد بر حسب ریال'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاریخ ایجاد'))
-    applied = models.BooleanField(default=False, verbose_name=_('اعمال شده'))
+    applied = models.BooleanField(default=False, verbose_name=_('اعمال شده'), db_index=True)
     issued_at = models.DateTimeField(default=timezone.now, verbose_name=_('تاریخ صدور'))
     scheduled_for = models.DateTimeField(null=True, blank=True, verbose_name=_('زمان‌بندی شده برای'))
     # Workflow state
