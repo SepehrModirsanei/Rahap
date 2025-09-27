@@ -70,8 +70,8 @@ class Transaction(models.Model):
     ]
     state = models.CharField(max_length=40, choices=STATE_CHOICES, default=STATE_WAITING_TREASURY, verbose_name=_('وضعیت'))
     
-    # Receipt for credit increase transactions
-    receipt = models.ImageField(upload_to='receipts/', null=True, blank=True, verbose_name=_('رسید'), help_text=_('آپلود تصویر رسید (فرمت JPG) برای تراکنش‌های افزایش اعتبار'))
+    # Receipt for credit increase and withdrawal request transactions
+    receipt = models.ImageField(upload_to='receipts/', null=True, blank=True, verbose_name=_('رسید'), help_text=_('آپلود تصویر رسید (فرمت JPG) برای تراکنش‌های افزایش اعتبار و برداشت (الزامی برای برداشت در حالت انجام شده)'))
     
     # Withdrawal destination information
     withdrawal_card_number = models.CharField(max_length=16, blank=True, verbose_name=_('شماره کارت'), help_text=_('شماره کارت 16 رقمی برای برداشت'))
@@ -114,6 +114,11 @@ class Transaction(models.Model):
             if self.withdrawal_sheba_number:
                 if not self.withdrawal_sheba_number.startswith('IR') or len(self.withdrawal_sheba_number) != 24:
                     raise ValidationError('SHEBA number must start with IR and be 24 characters long.')
+            
+            # Require receipt when withdrawal request is marked as done
+            if self.state == self.STATE_DONE and not self.receipt:
+                raise ValidationError('Receipt is required for withdrawal requests when marked as done.')
+            
             return
         if self.kind == self.KIND_ACCOUNT_TO_DEPOSIT_INITIAL:
             if not (self.source_account and self.destination_deposit):
