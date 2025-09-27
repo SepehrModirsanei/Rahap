@@ -350,6 +350,7 @@ class DepositTransactionForm(forms.ModelForm):
         widgets = {}
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         # Pre-set the kind to account_to_deposit_initial
         self.instance.kind = Transaction.KIND_ACCOUNT_TO_DEPOSIT_INITIAL

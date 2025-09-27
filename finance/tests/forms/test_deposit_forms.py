@@ -10,7 +10,7 @@ This module tests deposit form functionality including:
 
 from decimal import Decimal
 from django.test import TestCase
-from finance.models import User, Account
+from finance.models import User, Account, Transaction, Deposit
 from finance.forms.specialized_forms import DepositTransactionForm
 from finance.tests.test_config import FinanceTestCase
 
@@ -24,6 +24,7 @@ class DepositFormsTests(FinanceTestCase):
         self.rial_account = self.create_test_account(
             self.user, 'Test Rial Account', Account.ACCOUNT_TYPE_RIAL, Decimal('1000000.00')
         )
+        self.deposit = self.create_test_deposit(self.user)
     
     def test_deposit_transaction_form_initialization(self):
         """Test deposit transaction form initialization"""
@@ -34,8 +35,11 @@ class DepositFormsTests(FinanceTestCase):
     def test_deposit_transaction_form_with_valid_data(self):
         """Test deposit transaction form with valid data"""
         form_data = {
+            'user': self.user.id,
             'source_account': self.rial_account.id,
+            'destination_deposit': self.deposit.id,
             'amount': '100000.00',
+            'state': Transaction.STATE_DONE,
             'comment': 'Test deposit transaction'
         }
         form = DepositTransactionForm(data=form_data, user=self.user)
@@ -43,7 +47,8 @@ class DepositFormsTests(FinanceTestCase):
     
     def test_deposit_transaction_form_account_filtering(self):
         """Test deposit transaction form account filtering"""
-        form = DepositTransactionForm(user=self.user)
+        form_data = {'user': self.user.id}
+        form = DepositTransactionForm(data=form_data, user=self.user)
         # Should include deposit transaction accounts
         account_choices = [choice[0] for choice in form.fields['source_account'].choices]
         self.assertIn(self.rial_account.id, account_choices)
@@ -51,8 +56,11 @@ class DepositFormsTests(FinanceTestCase):
     def test_deposit_transaction_form_save(self):
         """Test deposit transaction form save"""
         form_data = {
+            'user': self.user.id,
             'source_account': self.rial_account.id,
+            'destination_deposit': self.deposit.id,
             'amount': '100000.00',
+            'state': Transaction.STATE_DONE,
             'comment': 'Test deposit transaction'
         }
         form = DepositTransactionForm(data=form_data, user=self.user)
