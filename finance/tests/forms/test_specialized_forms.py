@@ -10,7 +10,7 @@ This module tests specialized form functionality including:
 
 from decimal import Decimal
 from django.test import TestCase
-from finance.models import User, Account
+from finance.models import User, Account, Transaction
 from finance.forms.specialized_forms import ProfitTransactionForm, DepositTransactionForm
 from finance.tests.test_config import FinanceTestCase
 
@@ -34,8 +34,10 @@ class SpecializedFormsTests(FinanceTestCase):
     def test_profit_transaction_form_with_valid_data(self):
         """Test profit transaction form with valid data"""
         form_data = {
+            'user': self.user.id,
             'destination_account': self.rial_account.id,
             'amount': '100000.00',
+            'state': Transaction.STATE_DONE,
             'comment': 'Test profit transaction'
         }
         form = ProfitTransactionForm(data=form_data, user=self.user)
@@ -43,7 +45,8 @@ class SpecializedFormsTests(FinanceTestCase):
     
     def test_profit_transaction_form_choices_filtering(self):
         """Test profit transaction form choices filtering"""
-        form = ProfitTransactionForm(user=self.user)
+        form_data = {'user': self.user.id}
+        form = ProfitTransactionForm(data=form_data, user=self.user)
         # Should include profit transaction choices
         account_choices = [choice[0] for choice in form.fields['destination_account'].choices]
         self.assertIn(self.rial_account.id, account_choices)
@@ -51,8 +54,10 @@ class SpecializedFormsTests(FinanceTestCase):
     def test_profit_transaction_form_save(self):
         """Test profit transaction form save"""
         form_data = {
+            'user': self.user.id,
             'destination_account': self.rial_account.id,
             'amount': '100000.00',
+            'state': Transaction.STATE_DONE,
             'comment': 'Test profit transaction'
         }
         form = ProfitTransactionForm(data=form_data, user=self.user)

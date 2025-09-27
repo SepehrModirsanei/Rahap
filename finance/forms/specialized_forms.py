@@ -306,6 +306,7 @@ class ProfitTransactionForm(forms.ModelForm):
         widgets = {}
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         # Pre-set the kind to profit_account (can be changed if needed)
         self.instance.kind = Transaction.KIND_PROFIT_ACCOUNT

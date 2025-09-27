@@ -11,7 +11,7 @@ This module tests deposit form functionality including:
 from decimal import Decimal
 from django.test import TestCase
 from finance.models import User, Account
-from finance.forms.deposit_forms import DepositTransactionForm
+from finance.forms.specialized_forms import DepositTransactionForm
 from finance.tests.test_config import FinanceTestCase
 
 

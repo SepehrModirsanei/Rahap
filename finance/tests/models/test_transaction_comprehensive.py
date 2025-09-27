@@ -80,7 +80,8 @@ class TransactionComprehensiveTests(FinanceTestCase):
             amount=Decimal('100000.00'),
             kind=Transaction.KIND_WITHDRAWAL_REQUEST,
             state=Transaction.STATE_DONE,
-            withdrawal_card_number='1234567890123456'
+            withdrawal_card_number='1234567890123456',
+            receipt='receipts/test_receipt.jpg'  # Add required receipt
         )
         
         # Apply the transaction
