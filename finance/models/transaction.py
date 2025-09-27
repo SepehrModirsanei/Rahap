@@ -215,8 +215,11 @@ class Transaction(models.Model):
         # If scheduled in the future, skip application now
         if self.scheduled_for and self.scheduled_for > timezone.now():
             return
-        # All transaction types should only apply when marked as done
-        if self.state != self.STATE_DONE:
+        
+        # Only workflow transactions (withdrawal, credit increase) need to be in STATE_DONE
+        # Other transactions (account transfers, profit transfers) can apply immediately
+        workflow_transactions = [self.KIND_WITHDRAWAL_REQUEST, self.KIND_CREDIT_INCREASE]
+        if self.kind in workflow_transactions and self.state != self.STATE_DONE:
             return
         
         # Validate before applying
@@ -390,7 +393,9 @@ class Transaction(models.Model):
                     self.state = self.STATE_WAITING_FINANCE_MANAGER
                 elif self.kind == self.KIND_CREDIT_INCREASE:
                     self.state = self.STATE_WAITING_TREASURY
-                # Other transaction types keep default state
+                else:
+                    # Auto-apply other transaction types (account transfers, profit transfers)
+                    self.state = self.STATE_DONE
 
         # Ensure computed fields (e.g., destination_amount) are set before persisting
         try:

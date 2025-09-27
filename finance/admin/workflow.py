@@ -149,15 +149,18 @@ class TreasuryWorkflowMixin(TreasuryMixin, WorkflowMixin):
     """Treasury admin workflow mixin - handles both treasury and sandogh functions"""
     
     def get_queryset(self, request):
-        """Filter transactions for treasury admin"""
+        """Filter transactions for treasury admin - only workflow transactions"""
         from django.contrib import admin
         qs = admin.ModelAdmin.get_queryset(self, request)
-        # Treasury admin sees transactions waiting for treasury approval AND sandogh processing
-        return qs.filter(state__in=[
-            Transaction.STATE_WAITING_TREASURY,
-            Transaction.STATE_APPROVED_BY_FINANCE_MANAGER,
-            Transaction.STATE_WAITING_SANDOGH
-        ])
+        # Treasury admin sees only workflow transactions (withdrawal, credit increase) in relevant states
+        return qs.filter(
+            kind__in=[Transaction.KIND_WITHDRAWAL_REQUEST, Transaction.KIND_CREDIT_INCREASE],
+            state__in=[
+                Transaction.STATE_WAITING_TREASURY,
+                Transaction.STATE_APPROVED_BY_FINANCE_MANAGER,
+                Transaction.STATE_WAITING_SANDOGH
+            ]
+        )
     
     actions = ['approve_for_sandogh', 'verify_sandogh', 'reject_transaction']
     
@@ -205,13 +208,13 @@ class FinanceManagerWorkflowMixin(WorkflowMixin):
     """Finance manager workflow mixin"""
     
     def get_queryset(self, request):
-        """Filter transactions for finance manager"""
+        """Filter transactions for finance manager - only workflow transactions"""
         from django.contrib import admin
         qs = admin.ModelAdmin.get_queryset(self, request)
-        # Finance manager sees withdrawal requests waiting for approval
+        # Finance manager sees only withdrawal requests waiting for approval
         return qs.filter(
-            state=Transaction.STATE_WAITING_FINANCE_MANAGER,
-            kind=Transaction.KIND_WITHDRAWAL_REQUEST
+            kind=Transaction.KIND_WITHDRAWAL_REQUEST,
+            state=Transaction.STATE_WAITING_FINANCE_MANAGER
         )
     
     actions = ['approve_finance_manager', 'reject_transaction']
@@ -245,11 +248,14 @@ class OperationWorkflowMixin(OperationMixin, WorkflowMixin):
     """Operation admin workflow mixin"""
     
     def get_queryset(self, request):
-        """Filter transactions for operation admin"""
+        """Filter transactions for operation admin - only workflow transactions"""
         from django.contrib import admin
         qs = admin.ModelAdmin.get_queryset(self, request)
-        # Operation admin sees transactions approved by sandogh
-        return qs.filter(state=Transaction.STATE_APPROVED_BY_SANDOGH)
+        # Operation admin sees only workflow transactions (withdrawal, credit increase) approved by sandogh
+        return qs.filter(
+            kind__in=[Transaction.KIND_WITHDRAWAL_REQUEST, Transaction.KIND_CREDIT_INCREASE],
+            state=Transaction.STATE_APPROVED_BY_SANDOGH
+        )
     
     actions = ['complete_transaction', 'reject_transaction']
     
@@ -288,11 +294,11 @@ class SupervisorWorkflowMixin(ReadOnlyMixin, WorkflowMixin):
     """Supervisor admin workflow mixin (read-only oversight)"""
     
     def get_queryset(self, request):
-        """Filter transactions for supervisor admin"""
+        """Filter transactions for supervisor admin - only workflow transactions"""
         from django.contrib import admin
         qs = admin.ModelAdmin.get_queryset(self, request)
-        # Supervisor sees all transactions for oversight
-        return qs
+        # Supervisor sees only workflow transactions (withdrawal, credit increase) for oversight
+        return qs.filter(kind__in=[Transaction.KIND_WITHDRAWAL_REQUEST, Transaction.KIND_CREDIT_INCREASE])
     
 
 
