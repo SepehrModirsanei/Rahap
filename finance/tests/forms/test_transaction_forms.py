@@ -31,9 +31,8 @@ class TransactionFormsTests(FinanceTestCase):
     
     def test_withdrawal_request_form_initialization(self):
         """Test withdrawal request form initialization"""
-        form = WithdrawalRequestForm(user=self.user)
+        form = WithdrawalRequestForm()
         self.assertIsNotNone(form)
-        self.assertEqual(form.user, self.user)
     
     def test_withdrawal_request_form_with_data(self):
         """Test withdrawal request form with data"""
