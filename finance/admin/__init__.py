@@ -6,7 +6,8 @@ This module provides all admin classes and configurations for the finance applic
 
 # Import base admin classes
 from .base import (
-    BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin
+    BaseAccountAdmin, BaseDepositAdmin, BaseTransactionAdmin, BaseAccountDailyBalanceAdmin,
+    BaseDepositDailyBalanceAdmin
 )
 
 # Import inline classes
@@ -63,6 +64,7 @@ __all__ = [
     'BaseDepositAdmin',
     'BaseTransactionAdmin',
     'BaseAccountDailyBalanceAdmin',
+    'BaseDepositDailyBalanceAdmin',
     
     # Inline classes
     'AccountTxnInInline',
@@ -103,7 +105,6 @@ __all__ = [
     # Admin sites
     'treasury_admin_site',
     'operation_admin_site',
-    'analytics_admin_site',
     'analytics_admin_site',
     
     # Supervisor admin

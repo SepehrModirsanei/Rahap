@@ -2,8 +2,7 @@
 Custom widgets for Persian date handling
 """
 from django import forms
-from django.utils import timezone
-from persiantools.jdatetime import JalaliDateTime
+from persiantools.jdatetime import JalaliDateTime, JalaliDate
 from persiantools import digits
 
 

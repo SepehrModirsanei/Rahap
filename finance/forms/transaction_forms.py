@@ -1,7 +1,7 @@
 from django import forms
 
 from ..models import Transaction, Account
-from ..widgets.persian_date_picker import PersianDateTimePickerWidget
+from ..widgets import PersianDateTimePickerWidget
 
 
 class TransactionAdminForm(forms.ModelForm):
