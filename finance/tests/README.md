@@ -13,11 +13,23 @@ This directory contains all test files for the finance application, organized by
 ### 📁 `/transactions/` - Transaction Tests
 - **`test_transaction_current.py`** - Current transaction functionality tests
 
+### 📁 `/workflow/` - Workflow Tests
+- **`test_transaction_state_workflow.py`** - Transaction state workflow and admin workflow tests
+
 ### 📁 `/admin/` - Admin Interface Tests
 - (To be added) Admin panel functionality tests
 
 ### 📁 `/models/` - Model Tests
-- (To be added) Model validation and behavior tests
+- **`test_account_balance_comprehensive.py`** - Comprehensive account balance calculation tests
+- **`test_account_model.py`** - Basic account model functionality tests
+- **`test_deposit_model.py`** - Basic deposit model functionality tests
+- **`test_deposit_profit_comprehensive.py`** - Comprehensive deposit profit calculation tests
+- **`test_transaction_comprehensive.py`** - Comprehensive transaction functionality tests
+- **`test_user_model.py`** - User model functionality tests
+- **`test_exchange_rate_logic.py`** - Exchange rate logic for cross-currency transactions
+- **`test_transaction_code_generation.py`** - Transaction code generation and uniqueness tests
+- **`test_daily_balance_snapshots.py`** - Daily balance snapshot system tests
+- **`test_breakage_coefficient.py`** - Breakage coefficient logic tests (incomplete implementation)
 
 ## Running Tests
 
