@@ -4,7 +4,6 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
-import uuid
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 from persiantools.jdatetime import JalaliDateTime
