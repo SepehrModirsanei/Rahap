@@ -23,6 +23,7 @@ class WithdrawalRequestForm(forms.ModelForm):
         widgets = {}
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         # Pre-set the kind to withdrawal_request
         self.instance.kind = Transaction.KIND_WITHDRAWAL_REQUEST
@@ -38,6 +39,9 @@ class WithdrawalRequestForm(forms.ModelForm):
 
         # Populate saved bank destinations
         self._populate_bank_destination_choices()
+        
+        # Filter state choices based on current state
+        self._filter_state_choices()
 
     def _filter_account_choices(self):
         """Filter to only rial accounts for the selected user"""
@@ -76,6 +80,41 @@ class WithdrawalRequestForm(forms.ModelForm):
                 pass
         self.fields['bank_destination'].choices = choices
 
+    def _filter_state_choices(self):
+        """Filter state choices based on current state for withdrawal requests"""
+        if 'state' not in self.fields:
+            return
+            
+        current_state = self.instance.state if self.instance.pk else None
+        
+        # Define valid next states for withdrawal requests
+        valid_next_states = self._get_valid_next_states(current_state)
+        
+        if valid_next_states:
+            # Filter state choices to only show valid next states
+            all_choices = self.fields['state'].choices
+            filtered_choices = [choice for choice in all_choices if choice[0] in valid_next_states]
+            self.fields['state'].choices = filtered_choices
+    
+    def _get_valid_next_states(self, current_state):
+        """Get valid next states for withdrawal requests"""
+        if not current_state:
+            # For new withdrawal requests, start with finance manager
+            return [Transaction.STATE_WAITING_FINANCE_MANAGER]
+        
+        # Define state transitions for withdrawal requests
+        transitions = {
+            Transaction.STATE_WAITING_FINANCE_MANAGER: [Transaction.STATE_APPROVED_BY_FINANCE_MANAGER, Transaction.STATE_REJECTED],
+            Transaction.STATE_APPROVED_BY_FINANCE_MANAGER: [Transaction.STATE_WAITING_TREASURY],
+            Transaction.STATE_WAITING_TREASURY: [Transaction.STATE_WAITING_SANDOGH, Transaction.STATE_REJECTED],
+            Transaction.STATE_WAITING_SANDOGH: [Transaction.STATE_APPROVED_BY_SANDOGH, Transaction.STATE_REJECTED],
+            Transaction.STATE_APPROVED_BY_SANDOGH: [Transaction.STATE_DONE],
+            Transaction.STATE_DONE: [],  # Terminal state
+            Transaction.STATE_REJECTED: [],  # Terminal state
+        }
+        
+        return transitions.get(current_state, [])
+
     def clean(self):
         cleaned = super().clean()
         # Apply selected saved bank info to withdrawal fields if provided
@@ -108,6 +147,7 @@ class CreditIncreaseForm(forms.ModelForm):
         widgets = {}
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         # Pre-set the kind to credit_increase
         self.instance.kind = Transaction.KIND_CREDIT_INCREASE
@@ -118,6 +158,9 @@ class CreditIncreaseForm(forms.ModelForm):
         
         # Filter to only rial accounts for the selected user
         self._filter_account_choices()
+        
+        # Filter state choices based on current state
+        self._filter_state_choices()
 
     def _filter_account_choices(self):
         """Filter to only rial accounts for the selected user"""
@@ -139,6 +182,39 @@ class CreditIncreaseForm(forms.ModelForm):
         if obj:
             return f"{obj.name} ({obj.get_account_type_display()})"
         return ""
+
+    def _filter_state_choices(self):
+        """Filter state choices based on current state for credit increase"""
+        if 'state' not in self.fields:
+            return
+            
+        current_state = self.instance.state if self.instance.pk else None
+        
+        # Define valid next states for credit increase
+        valid_next_states = self._get_valid_next_states(current_state)
+        
+        if valid_next_states:
+            # Filter state choices to only show valid next states
+            all_choices = self.fields['state'].choices
+            filtered_choices = [choice for choice in all_choices if choice[0] in valid_next_states]
+            self.fields['state'].choices = filtered_choices
+    
+    def _get_valid_next_states(self, current_state):
+        """Get valid next states for credit increase"""
+        if not current_state:
+            # For new credit increase, start with treasury
+            return [Transaction.STATE_WAITING_TREASURY]
+        
+        # Define state transitions for credit increase
+        transitions = {
+            Transaction.STATE_WAITING_TREASURY: [Transaction.STATE_WAITING_SANDOGH, Transaction.STATE_REJECTED],
+            Transaction.STATE_WAITING_SANDOGH: [Transaction.STATE_APPROVED_BY_SANDOGH, Transaction.STATE_REJECTED],
+            Transaction.STATE_APPROVED_BY_SANDOGH: [Transaction.STATE_DONE],
+            Transaction.STATE_DONE: [],  # Terminal state
+            Transaction.STATE_REJECTED: [],  # Terminal state
+        }
+        
+        return transitions.get(current_state, [])
 
     def clean(self):
         cleaned = super().clean()
@@ -162,6 +238,7 @@ class AccountTransferForm(forms.ModelForm):
         widgets = {}
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         # Pre-set the kind to account_to_account
         self.instance.kind = Transaction.KIND_TRANSFER_ACCOUNT_TO_ACCOUNT

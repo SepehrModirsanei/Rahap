@@ -33,6 +33,9 @@ class TransactionAdminForm(forms.ModelForm):
 
         # Filter accounts based on transaction type and user
         self._filter_account_choices()
+        
+        # Filter state choices based on current state and admin type
+        self._filter_state_choices()
 
     def _filter_account_choices(self):
         """Filter account choices based on transaction type and user"""
@@ -104,5 +107,61 @@ class TransactionAdminForm(forms.ModelForm):
             setattr(self.instance, field, value)
         self.instance.clean()
         return cleaned
+    
+    def _filter_state_choices(self):
+        """Filter state choices based on current state and admin type"""
+        if 'state' not in self.fields:
+            return
+            
+        current_state = self.instance.state if self.instance.pk else None
+        kind = self.data.get('kind') if self.data else (self.instance.kind if self.instance.pk else None)
+        
+        # Only filter for workflow transactions (withdrawal and credit increase)
+        workflow_transactions = [Transaction.KIND_WITHDRAWAL_REQUEST, Transaction.KIND_CREDIT_INCREASE]
+        if kind not in workflow_transactions:
+            return
+            
+        # Define valid next states based on current state
+        valid_next_states = self._get_valid_next_states(current_state, kind)
+        
+        if valid_next_states:
+            # Filter state choices to only show valid next states
+            all_choices = self.fields['state'].choices
+            filtered_choices = [choice for choice in all_choices if choice[0] in valid_next_states]
+            self.fields['state'].choices = filtered_choices
+    
+    def _get_valid_next_states(self, current_state, kind):
+        """Get valid next states based on current state and transaction kind"""
+        if not current_state:
+            # For new transactions, start with appropriate initial state
+            if kind == Transaction.KIND_WITHDRAWAL_REQUEST:
+                return [Transaction.STATE_WAITING_FINANCE_MANAGER]
+            elif kind == Transaction.KIND_CREDIT_INCREASE:
+                return [Transaction.STATE_WAITING_TREASURY]
+            return []
+        
+        # Define state transitions for each transaction type
+        if kind == Transaction.KIND_WITHDRAWAL_REQUEST:
+            transitions = {
+                Transaction.STATE_WAITING_FINANCE_MANAGER: [Transaction.STATE_APPROVED_BY_FINANCE_MANAGER, Transaction.STATE_REJECTED],
+                Transaction.STATE_APPROVED_BY_FINANCE_MANAGER: [Transaction.STATE_WAITING_TREASURY],
+                Transaction.STATE_WAITING_TREASURY: [Transaction.STATE_WAITING_SANDOGH, Transaction.STATE_REJECTED],
+                Transaction.STATE_WAITING_SANDOGH: [Transaction.STATE_APPROVED_BY_SANDOGH, Transaction.STATE_REJECTED],
+                Transaction.STATE_APPROVED_BY_SANDOGH: [Transaction.STATE_DONE],
+                Transaction.STATE_DONE: [],  # Terminal state
+                Transaction.STATE_REJECTED: [],  # Terminal state
+            }
+        elif kind == Transaction.KIND_CREDIT_INCREASE:
+            transitions = {
+                Transaction.STATE_WAITING_TREASURY: [Transaction.STATE_WAITING_SANDOGH, Transaction.STATE_REJECTED],
+                Transaction.STATE_WAITING_SANDOGH: [Transaction.STATE_APPROVED_BY_SANDOGH, Transaction.STATE_REJECTED],
+                Transaction.STATE_APPROVED_BY_SANDOGH: [Transaction.STATE_DONE],
+                Transaction.STATE_DONE: [],  # Terminal state
+                Transaction.STATE_REJECTED: [],  # Terminal state
+            }
+        else:
+            return []
+        
+        return transitions.get(current_state, [])
 
 

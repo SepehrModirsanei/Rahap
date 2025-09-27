@@ -11,7 +11,8 @@ This module tests transaction form functionality including:
 from decimal import Decimal
 from django.test import TestCase
 from finance.models import User, Account
-from finance.forms.transaction_forms import WithdrawalRequestForm, CreditIncreaseForm, AccountTransferForm
+from finance.forms.transaction_forms import TransactionAdminForm
+from finance.forms.specialized_forms import WithdrawalRequestForm, CreditIncreaseForm, AccountTransferForm
 from finance.tests.test_config import FinanceTestCase
 
 
